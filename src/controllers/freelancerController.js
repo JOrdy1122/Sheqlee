@@ -1,0 +1,645 @@
+const Freelancer = require('./../models/freelancerModel');
+const sendEmail = require('../utils/email');
+const jwt = require('jsonwebtoken');
+const crypto = require('crypto');
+const Jobs = require('../models/jobModel');
+
+exports.toggleTagSubscription = async (req, res) => {
+    try {
+        const { userId } = req.user; // Extract the logged-in freelancer's ID
+        const { tagId } = req.body; // Get the tag ID from request body
+
+        if (!tagId) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Tag ID is required!',
+            });
+        }
+
+        // Find the freelancer
+        const freelancer =
+            await Freelancer.findById(userId);
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        // Toggle the tag subscription
+        const subscribedTagsSet = new Set(
+            freelancer.subscribedTags.map((id) =>
+                id.toString()
+            )
+        );
+
+        if (subscribedTagsSet.has(tagId)) {
+            subscribedTagsSet.delete(tagId); // Unsubscribe
+        } else {
+            subscribedTagsSet.add(tagId); // Subscribe
+        }
+
+        // Update freelancer subscriptions
+        const updatedFreelancer =
+            await Freelancer.findByIdAndUpdate(
+                userId,
+                {
+                    subscribedTags: Array.from(
+                        subscribedTagsSet
+                    ),
+                },
+                { new: true, runValidators: false }
+            );
+
+        res.status(200).json({
+            status: 'success',
+            message: `Successfully ${subscribedTagsSet.has(tagId) ? 'subscribed to' : 'unsubscribed from'} tag!`,
+            data: updatedFreelancer.subscribedTags,
+        });
+    } catch (err) {
+        console.error(
+            '❌ Error toggling tag subscription:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error toggling tag subscription!',
+        });
+    }
+};
+
+exports.toggleCategorySubscription = async (req, res) => {
+    try {
+        const { userId } = req.user; // Extract the logged-in freelancer's ID
+        const { categoryId } = req.body; // Get the category ID from request body
+
+        if (!categoryId) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Category ID is required!',
+            });
+        }
+
+        // Find the freelancer
+        const freelancer =
+            await Freelancer.findById(userId);
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        // Toggle the category subscription
+        const subscribedCategoriesSet = new Set(
+            freelancer.subscribedCategories.map((id) =>
+                id.toString()
+            )
+        );
+
+        if (subscribedCategoriesSet.has(categoryId)) {
+            subscribedCategoriesSet.delete(categoryId); // Unsubscribe
+        } else {
+            subscribedCategoriesSet.add(categoryId); // Subscribe
+        }
+
+        // Update freelancer subscriptions
+        const updatedFreelancer =
+            await Freelancer.findByIdAndUpdate(
+                userId,
+                {
+                    subscribedCategories: Array.from(
+                        subscribedCategoriesSet
+                    ),
+                },
+                { new: true, runValidators: false }
+            );
+
+        res.status(200).json({
+            status: 'success',
+            message: `Successfully ${subscribedCategoriesSet.has(categoryId) ? 'subscribed to' : 'unsubscribed from'} category!`,
+            data: updatedFreelancer.subscribedCategories,
+        });
+    } catch (err) {
+        console.error(
+            '❌ Error toggling category subscription:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message:
+                'Error toggling category subscription!',
+        });
+    }
+};
+
+exports.toggleApplyJob = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { jobId } = req.body;
+
+        if (!jobId) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Job ID is required!',
+            });
+        }
+
+        // Find the freelancer
+        const freelancer =
+            await Freelancer.findById(userId);
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        // Check if the job is already applied for
+        const isApplied =
+            freelancer.appliedJobs.includes(jobId);
+
+        // Update appliedJobs using $pull or $addToSet
+        const updatedFreelancer =
+            await Freelancer.findByIdAndUpdate(
+                userId,
+                isApplied
+                    ? { $pull: { appliedJobs: jobId } } // Remove from applied jobs
+                    : { $addToSet: { appliedJobs: jobId } }, // Add to applied jobs if not already present
+                { new: true, runValidators: false } // Prevents validation errors like `passwordConfirm`
+            );
+
+        res.status(200).json({
+            status: 'success',
+            message: isApplied
+                ? 'Job application canceled!'
+                : 'Job successfully applied!',
+            appliedJobs: updatedFreelancer.appliedJobs, // Return updated applied jobs
+        });
+    } catch (err) {
+        console.error(
+            '❌ Error updating applied jobs:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error updating applied jobs!',
+        });
+    }
+};
+
+exports.getAppliedJobs = async (req, res) => {
+    try {
+        const { userId } = req.user; // Freelancer ID
+
+        // Fetch freelancer and populate applied jobs
+        const freelancer =
+            await Freelancer.findById(userId).populate(
+                'appliedJobs'
+            );
+
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            result: freelancer.appliedJobs.length, // Count of applied jobs
+            data: freelancer.appliedJobs, // List of applied jobs
+        });
+    } catch (err) {
+        console.error(
+            '❌ Error fetching applied jobs:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error fetching applied jobs!',
+        });
+    }
+};
+
+exports.toggleFavoriteJob = async (req, res) => {
+    try {
+        const { userId } = req.user;
+        const { jobId } = req.body;
+
+        if (!jobId) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Job ID is required!',
+            });
+        }
+
+        // Use $pull to remove if exists, $addToSet to add if not
+        const freelancer =
+            await Freelancer.findById(userId);
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        const isFavorited =
+            freelancer.favorites.includes(jobId);
+
+        const updatedFreelancer =
+            await Freelancer.findByIdAndUpdate(
+                userId,
+                isFavorited
+                    ? { $pull: { favorites: jobId } } // Remove from favorites
+                    : { $addToSet: { favorites: jobId } }, // Add if not already present
+                { new: true, runValidators: false } // Ensures passwordConfirm doesn’t trigger
+            );
+
+        res.status(200).json({
+            status: 'success',
+            message: isFavorited
+                ? 'Job removed from favorites!'
+                : 'Job added to favorites!',
+            data: updatedFreelancer.favorites, // Return updated favorites
+        });
+    } catch (err) {
+        console.error(
+            '❌ Error updating favorite jobs:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error updating favorite jobs!',
+        });
+    }
+};
+
+// ✅ Get Favorite Jobs List
+exports.getFavoriteJobs = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        const freelancer =
+            await Freelancer.findById(userId).populate(
+                'favorites'
+            );
+
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        res.status(200).json({
+            status: 'success',
+            results: freelancer.favorites.length,
+            data: freelancer.favorites,
+        });
+    } catch (err) {
+        console.error(
+            '❌ Error fetching favorite jobs:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error fetching favorite jobs!',
+        });
+    }
+};
+
+exports.toggleFreelancerAction = async (req, res) => {
+    try {
+        const freelancer = await Freelancer.findById(
+            req.params.id
+        );
+
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        // Toggle action status
+        freelancer.action =
+            freelancer.action === 'active'
+                ? 'inactive'
+                : 'active';
+
+        await freelancer.save(); // ✅ Save the updated status
+
+        res.status(200).json({
+            status: 'success',
+            message: `Freelancer is now ${freelancer.action}!`,
+            data: { freelancer },
+        });
+    } catch (err) {
+        console.error(
+            'Error toggling freelancer status:',
+            err
+        );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error toggling freelancer status!',
+        });
+    }
+};
+
+exports.forgotPassword = async (req, res) => {
+    try {
+        const freelancer = await Freelancer.findOne({
+            email: req.body.email,
+        });
+
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message:
+                    'No freelancer found with this email!',
+            });
+        }
+
+        // Generate password reset code
+        const resetCode =
+            freelancer.createPasswordResetCode();
+        await freelancer.save({
+            validateBeforeSave: false,
+        });
+
+        // Send email with reset code
+        const message = `Your password reset code is: ${resetCode}. This code will expire in 10 minutes.`;
+
+        await sendEmail({
+            email: freelancer.email,
+            subject: 'Password Reset Code',
+            message,
+        });
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Reset code sent to email!',
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'fail',
+            message:
+                'Error processing password reset request!',
+        });
+    }
+};
+
+exports.resetPassword = async (req, res) => {
+    try {
+        const hashedCode = crypto
+            .createHash('sha256')
+            .update(req.body.passwordResetCode)
+            .digest('hex');
+
+        const freelancer = await Freelancer.findOne({
+            passwordResetCode: hashedCode,
+            passwordResetCodeExpires: { $gt: Date.now() },
+        });
+
+        if (!freelancer) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid or expired reset code!',
+            });
+        }
+
+        // Update password
+        freelancer.password = req.body.password;
+        freelancer.passwordConfirm =
+            req.body.passwordConfirm;
+        freelancer.passwordResetCode = undefined;
+        freelancer.passwordResetCodeExpires = undefined;
+        await freelancer.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Password reset successfully!',
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error resetting password!',
+        });
+    }
+};
+
+exports.subscribeToCompany = async (req, res) => {
+    try {
+        const { freelancerId, companyId } = req.body;
+
+        // Find the freelancer and update subscriptions
+        const freelancer =
+            await Freelancer.findByIdAndUpdate(
+                freelancerId,
+                {
+                    $addToSet: {
+                        subscribedCompanies: companyId,
+                    },
+                }, // Prevents duplicates
+                { new: true, runValidators: true }
+            );
+
+        if (!freelancer) {
+            return res
+                .status(404)
+                .json({ message: 'Freelancer not found' });
+        }
+
+        res.status(200).json({
+            message: 'Successfully subscribed to company!',
+            data: freelancer.subscribedCompanies,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error subscribing to company',
+            error,
+        });
+    }
+};
+
+exports.unsubscribeFromCompany = async (req, res) => {
+    try {
+        const { freelancerId, companyId } = req.body;
+
+        // Remove company from subscriptions
+        const freelancer =
+            await Freelancer.findByIdAndUpdate(
+                freelancerId,
+                {
+                    $pull: {
+                        subscribedCompanies: companyId,
+                    },
+                }, // Removes the company ID
+                { new: true, runValidators: true }
+            );
+
+        if (!freelancer) {
+            return res
+                .status(404)
+                .json({ message: 'Freelancer not found' });
+        }
+
+        res.status(200).json({
+            message:
+                'Successfully unsubscribed from company!',
+            data: freelancer.subscribedCompanies,
+        });
+    } catch (error) {
+        res.status(500).json({
+            message: 'Error unsubscribing from company',
+            error,
+        });
+    }
+};
+
+exports.getAllFreelancers = async (req, res) => {
+    try {
+        // Fetch all freelancers and populate referenced fields
+        const freelancers = await Freelancer.find()
+            .populate(
+                'subscribedCompanies',
+                'companyName domain'
+            )
+            .populate(
+                'subscribedCategories',
+                'title description'
+            )
+            .populate('subscribedTags', 'title icon')
+            .populate({
+                path: 'favorites', // 🔹 Populate favorite jobs
+                select: 'title company jobType salary', // 🔹 Select specific fields
+                populate: {
+                    path: 'company', // 🔹 Populate company inside jobs
+                    select: 'companyName',
+                },
+            });
+
+        res.status(200).json({
+            status: 'success',
+            results: freelancers.length,
+            data: {
+                freelancers,
+            },
+        });
+    } catch (err) {
+        console.error('Error fetching freelancers:', err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error fetching freelancers.',
+        });
+    }
+};
+
+exports.getFreelancer = async (req, res) => {
+    try {
+        const freelancer = await Freelancer.findById(
+            req.params.id
+        );
+        if (!freelancer)
+            console.log('Freelancer Could not been found!');
+
+        console.log(freelancer);
+
+        res.status(200).json({
+            status: 'success',
+            data: {
+                freelancer,
+            },
+        });
+    } catch (err) {
+        console.log('ERROR Fetching category: ', err);
+        res.status(500).json({
+            status: 'Fail',
+            message: ' Freelancer not found!',
+        });
+    }
+};
+// exports.updateFreelancer = async (req, res) => {
+//     try {
+//         const updatedFreelancer =
+//             Freelancer.findByIdAndUpdate(req.params.id);
+
+//         res.status(200).json({
+//             status: 'success!',
+//             data: {
+//                 updatedFreelancer,
+//             },
+//         });
+//     } catch (err) {
+//         console.log('ERROR updating Freelancer: ', err);
+//         res.status(500).json({
+//             status: 'Fail',
+//             message: 'ERROR updating the freelancer !',
+//         });
+//     }
+// };
+
+exports.updateFreelancer = async (req, res) => {
+    try {
+        let updateData = { ...req.body }; // Clone request body
+
+        // ✅ Handle Image Upload (Create/Update)
+        if (req.files && req.files.image) {
+            updateData.image = `/uploads/${req.files.image[0].filename}`;
+        }
+
+        // ✅ Handle CV Upload (Create/Update)
+        if (req.files && req.files.cvFile) {
+            updateData.cvFile = `/uploads/${req.files.cvFile[0].filename}`;
+        }
+
+        // ✅ Update freelancer details
+        const updatedFreelancer =
+            await Freelancer.findByIdAndUpdate(
+                req.params.id,
+                updateData, // Pass modified data
+                {
+                    new: true, // Return updated document
+                    runValidators: true, // Validate fields
+                    upsert: true, // Create if doesn't exist
+                }
+            );
+
+        if (!updatedFreelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found.',
+            });
+        }
+
+        res.status(200).json({
+            status: 'success!',
+            message: 'Freelancer updated successfully!',
+            data: {
+                freelancer: updatedFreelancer,
+            },
+        });
+    } catch (err) {
+        console.error('ERROR updating Freelancer: ', err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'ERROR updating the freelancer!',
+        });
+    }
+};
+
+exports.deleteFreelancer = async (req, res) => {
+    const freelancer = Freelancer.findByIdAndDelete(
+        req.params.id
+    );
+
+    res.status(204).json({
+        status: 'success',
+        data: {
+            freelancer,
+        },
+    });
+};
