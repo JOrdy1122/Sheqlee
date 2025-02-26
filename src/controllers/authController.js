@@ -228,14 +228,15 @@ exports.login = async (req, res) => {
 
         // Step 6: Return success response
         console.log('✅ Login successful!');
-        res.status(200).json({
+       res.status(200).json({
             status: 'success',
             message: 'Logged in successfully!',
             data: {
-                userIndex
-            },
-            token,
-        });
+            role: userIndex.role, // ✅ Only sending the role
+        },
+    token,
+});
+
     } catch (err) {
         console.error('❌ Error during login:', err);
         res.status(500).json({
