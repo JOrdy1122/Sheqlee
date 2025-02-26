@@ -231,11 +231,9 @@ exports.login = async (req, res) => {
        res.status(200).json({
             status: 'success',
             message: 'Logged in successfully!',
-            data: {
-            role: userIndex.role, // ✅ Only sending the role
-        },
-    token,
-});
+           role: userIndex.role,
+            token,
+        });
 
     } catch (err) {
         console.error('❌ Error during login:', err);
