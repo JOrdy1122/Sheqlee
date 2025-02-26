@@ -134,6 +134,7 @@ exports.toggleTagStatus = async (req, res) => {
 // };
 
 
+
 exports.getPopularTags = async (req, res) => {
     try {
         let popularTags = await Tag.aggregate([
@@ -237,6 +238,7 @@ exports.getPopularTags = async (req, res) => {
         });
     }
 };
+
 
 exports.createTag = async (req, res) => {
     try {
