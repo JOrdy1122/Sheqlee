@@ -133,6 +133,7 @@ exports.toggleTagStatus = async (req, res) => {
 //     }
 // };
 
+
 exports.getPopularTags = async (req, res) => {
     try {
         let popularTags = await Tag.aggregate([
@@ -147,7 +148,12 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            { $unwind: { path: '$categories', preserveNullAndEmptyArrays: true } },
+            {
+                $unwind: {
+                    path: '$categories',
+                    preserveNullAndEmptyArrays: true,
+                },
+            },
 
             {
                 $lookup: {
@@ -170,7 +176,12 @@ exports.getPopularTags = async (req, res) => {
             {
                 $addFields: {
                     jobCount: { $size: '$jobs' },
-                    subscriberCount: { $size: '$freelancerSubscribers' },
+                    subscriberCount: {
+                        $size: '$freelancerSubscribers',
+                    },
+                    title: {
+                        $ifNull: ['$title', 'Unknown'],
+                    }, // ✅ Ensure title is included
                 },
             },
 
@@ -178,7 +189,12 @@ exports.getPopularTags = async (req, res) => {
                 $addFields: {
                     popularityScore: {
                         $add: [
-                            { $multiply: ['$subscriberCount', 2] },
+                            {
+                                $multiply: [
+                                    '$subscriberCount',
+                                    2,
+                                ],
+                            },
                             '$jobCount',
                         ],
                     },
@@ -192,7 +208,7 @@ exports.getPopularTags = async (req, res) => {
             {
                 $project: {
                     _id: 1,
-                    title: { $ifNull: ['$title', 'Unknown'] }, // ✅ Ensure title is included
+                    title: 1, // ✅ Make sure title is included
                     jobCount: 1,
                     subscriberCount: 1,
                 },
@@ -200,10 +216,14 @@ exports.getPopularTags = async (req, res) => {
         ]);
 
         if (popularTags.length === 0) {
-            popularTags = await Tag.find({ status: 'active' })
+            popularTags = await Tag.find({
+                status: 'active',
+            })
                 .limit(6)
-                .select('_id title'); // ✅ Use `title` instead of `name`
+                .select('_id title');
         }
+
+        console.log(popularTags); // ✅ Debugging
 
         res.status(200).json({
             success: true,
