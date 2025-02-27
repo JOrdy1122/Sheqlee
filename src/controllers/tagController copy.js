@@ -141,7 +141,14 @@ exports.getPopularTags = async (req, res) => {
         let popularTags = await Tag.aggregate([
             { $match: { status: 'active' } },
 
-            // Get associated categories
+            // ✅ Store original title early
+            {
+                $addFields: {
+                    originalTitle: '$title', // Preserve the original title
+                },
+            },
+
+            // 🔍 Get associated categories
             {
                 $lookup: {
                     from: 'categories',
@@ -157,7 +164,7 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            // Get associated jobs
+            // 🔍 Get associated jobs
             {
                 $lookup: {
                     from: 'jobs',
@@ -167,7 +174,7 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            // Get freelancer subscribers
+            // 🔍 Get freelancer subscribers
             {
                 $lookup: {
                     from: 'freelancers',
@@ -198,7 +205,7 @@ exports.getPopularTags = async (req, res) => {
             {
                 $project: {
                     _id: 1,
-                    title: 1, // ✅ This ensures title is present
+                    title: { $ifNull: ['$originalTitle', '$title'] }, // 🔥 Guarantee title is included
                     jobCount: 1,
                     subscriberCount: 1,
                     popularityScore: 1,
