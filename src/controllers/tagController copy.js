@@ -136,55 +136,52 @@ exports.toggleTagStatus = async (req, res) => {
 
 exports.getPopularTags = async (req, res) => {
     try {
-        console.log('🚀 [START] Fetching popular tags...');
-
         let popularTags = await Tag.aggregate([
+            // Match active tags
             { $match: { status: 'active' } },
 
-            // ✅ Store original title early
-            {
-                $addFields: {
-                    originalTitle: '$title', // Preserve the original title
-                },
-            },
+            // Preserve the original title
+            { $addFields: { originalTitle: '$title' } },
 
-            // 🔍 Get associated categories
+            // Lookup associated categories
             {
                 $lookup: {
                     from: 'categories',
                     localField: '_id',
                     foreignField: 'tags',
-                    as: 'categories',
-                },
+                    as: 'categories'
+                }
             },
+
+            // Unwind categories array
             {
                 $unwind: {
                     path: '$categories',
-                    preserveNullAndEmptyArrays: true,
-                },
+                    preserveNullAndEmptyArrays: true
+                }
             },
 
-            // 🔍 Get associated jobs
+            // Lookup associated jobs
             {
                 $lookup: {
                     from: 'jobs',
                     localField: 'categories._id',
                     foreignField: 'category',
-                    as: 'jobs',
-                },
+                    as: 'jobs'
+                }
             },
 
-            // 🔍 Get freelancer subscribers
+            // Lookup freelancer subscribers
             {
                 $lookup: {
                     from: 'freelancers',
                     localField: '_id',
                     foreignField: 'subscribedTags',
-                    as: 'freelancerSubscribers',
-                },
+                    as: 'freelancerSubscribers'
+                }
             },
 
-            // ✅ Compute jobCount, subscriberCount, and popularityScore
+            // Add computed fields
             {
                 $addFields: {
                     jobCount: { $size: { $ifNull: ['$jobs', []] } },
@@ -193,45 +190,45 @@ exports.getPopularTags = async (req, res) => {
                         $add: [
                             { $multiply: [{ $size: '$freelancerSubscribers' }, 2] },
                             { $size: '$jobs' }
-                        ],
-                    },
-                },
+                        ]
+                    }
+                }
             },
 
+            // Sort by popularityScore in descending order
             { $sort: { popularityScore: -1 } },
+
+            // Limit to top 6
             { $limit: 6 },
 
-            // ✅ Ensure `title` is included in the final response
+            // Project the desired fields
             {
                 $project: {
                     _id: 1,
-                    title: { $ifNull: ['$originalTitle', '$title'] }, // 🔥 Guarantee title is included
+                    title: '$originalTitle', // Use the preserved title
                     jobCount: 1,
-                    subscriberCount: 1,
-                    popularityScore: 1,
-                },
-            },
+                    subscriberCount: 1
+                }
+            }
         ]);
 
-        // 🔹 Fallback: If no popular tags found, return any active ones
+        // Fallback: If no popular tags, return any active ones
         if (popularTags.length === 0) {
             popularTags = await Tag.find({ status: 'active' })
                 .limit(6)
                 .select('_id title');
         }
 
-        console.log('📤 [FINAL RESPONSE]:', JSON.stringify(popularTags, null, 2));
-
         res.status(200).json({
             success: true,
-            tags: popularTags,
+            tags: popularTags
         });
     } catch (error) {
-        console.error('❌ [ERROR] getPopularTags:', error);
+        console.error('Error in getPopularTags:', error);
         res.status(500).json({
             success: false,
             message: 'Server error',
-            error: error.message,
+            error: error.message
         });
     }
 };
