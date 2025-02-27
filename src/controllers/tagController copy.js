@@ -141,14 +141,15 @@ exports.getPopularTags = async (req, res) => {
         let popularTags = await Tag.aggregate([
             { $match: { status: 'active' } },
 
-            // ✅ Ensure `title` is preserved before lookup
-            { 
+            // ✅ Project title early to ensure it remains
+            {
                 $project: {
                     _id: 1,
-                    title: 1,
-                } 
+                    title: 1, // Ensure original title is always included
+                },
             },
 
+            // Get associated categories
             {
                 $lookup: {
                     from: 'categories',
@@ -157,9 +158,14 @@ exports.getPopularTags = async (req, res) => {
                     as: 'categories',
                 },
             },
+            {
+                $unwind: {
+                    path: '$categories',
+                    preserveNullAndEmptyArrays: true,
+                },
+            },
 
-            { $unwind: { path: '$categories', preserveNullAndEmptyArrays: true } },
-
+            // Get associated jobs
             {
                 $lookup: {
                     from: 'jobs',
@@ -169,6 +175,7 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
+            // Get freelancer subscribers
             {
                 $lookup: {
                     from: 'freelancers',
@@ -178,6 +185,7 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
+            // ✅ Compute jobCount, subscriberCount, and popularityScore
             {
                 $addFields: {
                     jobCount: { $size: { $ifNull: ['$jobs', []] } },
@@ -185,7 +193,7 @@ exports.getPopularTags = async (req, res) => {
                     popularityScore: {
                         $add: [
                             { $multiply: [{ $size: '$freelancerSubscribers' }, 2] },
-                            { $size: '$jobs' },
+                            { $size: '$jobs' }
                         ],
                     },
                 },
@@ -194,11 +202,11 @@ exports.getPopularTags = async (req, res) => {
             { $sort: { popularityScore: -1 } },
             { $limit: 6 },
 
-            // ✅ Keep `title`
+            // ✅ Ensure `title` is always included in the final response
             {
                 $project: {
                     _id: 1,
-                    title: 1, // 🔥 Make sure title is included
+                    title: 1, // Ensure original title is always returned
                     jobCount: 1,
                     subscriberCount: 1,
                     popularityScore: 1,
@@ -206,12 +214,14 @@ exports.getPopularTags = async (req, res) => {
             },
         ]);
 
-        console.log('🚨 [DEBUG] Final Response Data:', JSON.stringify(popularTags, null, 2));
-
+        // 🔹 Fallback: If no popular tags found, return any active ones
         if (popularTags.length === 0) {
-            console.log('⚠️ [WARNING] No popular tags found. Fetching active tags instead.');
-            popularTags = await Tag.find({ status: 'active' }).limit(6).select('_id title');
+            popularTags = await Tag.find({ status: 'active' })
+                .limit(6)
+                .select('_id title');
         }
+
+        console.log('📤 [FINAL RESPONSE]:', JSON.stringify(popularTags, null, 2));
 
         res.status(200).json({
             success: true,
@@ -219,9 +229,14 @@ exports.getPopularTags = async (req, res) => {
         });
     } catch (error) {
         console.error('❌ [ERROR] getPopularTags:', error);
-        res.status(500).json({ success: false, message: 'Server error', error: error.message });
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message,
+        });
     }
 };
+
 
 
 exports.createTag = async (req, res) => {
