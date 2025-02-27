@@ -138,105 +138,46 @@ exports.getPopularTags = async (req, res) => {
     try {
         console.log('🚀 [START] Fetching popular tags...');
 
-        let popularTags = await Tag.aggregate([
-            { $match: { status: 'active' } },
-            
-            {
-                $addFields: {
-                    tagTitle: '$title',
-                },
-            },
-
-            {
-                $lookup: {
-                    from: 'categories',
-                    localField: '_id',
-                    foreignField: 'tags',
-                    as: 'categories',
-                },
-            },
-
-            {
-                $unwind: {
-                    path: '$categories',
-                    preserveNullAndEmptyArrays: true,
-                },
-            },
-
+        const pipeline = [
             {
                 $lookup: {
                     from: 'jobs',
-                    localField: 'categories._id',
-                    foreignField: 'category',
-                    as: 'jobs',
-                },
+                    localField: '_id',
+                    foreignField: 'tags',
+                    as: 'jobs'
+                }
             },
-
             {
                 $lookup: {
-                    from: 'freelancers',
+                    from: 'subscribers',
                     localField: '_id',
                     foreignField: 'subscribedTags',
-                    as: 'freelancerSubscribers',
-                },
+                    as: 'subscribers'
+                }
             },
-
-            {
-                $addFields: {
-                    jobCount: { $size: { $ifNull: ['$jobs', []] } },
-                    subscriberCount: { $size: { $ifNull: ['$freelancerSubscribers', []] } },
-                    popularityScore: {
-                        $add: [
-                            { $multiply: [{ $size: '$freelancerSubscribers' }, 2] },
-                            { $size: '$jobs' },
-                        ],
-                    },
-                },
-            },
-
-            { $sort: { popularityScore: -1 } },
-            { $limit: 6 },
-
-            // Debugging: Check raw output before projection
             {
                 $project: {
-                    _id: 1,
-                    tagTitle: 1, // Debugging: Verify this field exists
-                    title: 1,    // Keep the original title field
-                    jobCount: 1,
-                    subscriberCount: 1,
-                    popularityScore: 1,
-                },
+                    title: 1,
+                    jobCount: { $size: '$jobs' },
+                    subscriberCount: { $size: '$subscribers' },
+                    popularityScore: { $add: [{ $size: '$jobs' }, { $size: '$subscribers' }] }
+                }
             },
-        ]);
+            { $sort: { popularityScore: -1 } },
+            { $limit: 10 }
+        ];
+
+        console.log('🔍 [DEBUG] Aggregation Pipeline:', JSON.stringify(pipeline, null, 2));
+
+        const popularTags = await Tag.aggregate(pipeline);
 
         console.log('🔍 [DEBUG] Aggregated Popular Tags:', JSON.stringify(popularTags, null, 2));
 
-        // 🔹 Fallback: If no popular tags found, return any active tags
-        if (popularTags.length === 0) {
-            console.log('⚠️ [WARNING] No popular tags found. Fetching any active tags instead.');
+        res.status(200).json(popularTags);
 
-            popularTags = await Tag.find({ status: 'active' })
-                .limit(6)
-                .select('_id title');
-
-            console.log('✅ [DEBUG] Fallback Active Tags:', JSON.stringify(popularTags, null, 2));
-        }
-
-        console.log('📤 [FINAL RESPONSE]:', JSON.stringify(popularTags, null, 2));
-
-        res.status(200).json({
-            success: true,
-            tags: popularTags,
-        });
     } catch (error) {
-        console.error('❌ [ERROR] getPopularTags:', error);
-
-        res.status(500).json({
-            success: false,
-            message: 'Server error',
-            error: error.message,
-        });
+        console.error('❌ [ERROR] Fetching Popular Tags:', error);
+        res.status(500).json({ success: false, error: error.message });
     }
 };
 
