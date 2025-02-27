@@ -141,14 +141,6 @@ exports.getPopularTags = async (req, res) => {
         let popularTags = await Tag.aggregate([
             { $match: { status: 'active' } },
 
-            // ✅ Project title early to ensure it remains
-            {
-                $project: {
-                    _id: 1,
-                    title: 1, // Ensure original title is always included
-                },
-            },
-
             // Get associated categories
             {
                 $lookup: {
@@ -202,11 +194,11 @@ exports.getPopularTags = async (req, res) => {
             { $sort: { popularityScore: -1 } },
             { $limit: 6 },
 
-            // ✅ Ensure `title` is always included in the final response
+            // ✅ Ensure `title` is included in the final response
             {
                 $project: {
                     _id: 1,
-                    title: 1, // Ensure original title is always returned
+                    title: 1, // ✅ This ensures title is present
                     jobCount: 1,
                     subscriberCount: 1,
                     popularityScore: 1,
