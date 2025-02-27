@@ -10,6 +10,7 @@ const {
     deletejob,
     getLatestJobs,
     getSubscribedJobs,
+    publishJob
 } = jobController;
 
 const router = express.Router();
@@ -17,6 +18,8 @@ const router = express.Router();
 router.get('/latest-job-posts', getLatestJobs);
 
 router.get('/subscribed', protect, getSubscribedJobs);
+
+router.patch('/:id/publish', protect, publishJob);
 
 router.route('/').get(getAvailableJobs).post(createJob);
 

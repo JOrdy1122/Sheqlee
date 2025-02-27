@@ -200,7 +200,7 @@ exports.getPopularTags = async (req, res) => {
             {
                 $project: {
                     _id: 1,
-                    title: '$tagTitle', // Use stored title from earlier
+                    title: { $ifNull: ['$tagTitle', '$title'] }, // 👈 Use original title if tagTitle is missing
                     jobCount: 1,
                     subscriberCount: 1,
                 },

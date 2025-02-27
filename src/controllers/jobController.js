@@ -95,24 +95,28 @@ exports.getLatestJobs = async (req, res) => {
 
 exports.createJob = async (req, res) => {
     try {
-        // Generate the next ID for jobs
         let nextJobId;
         try {
             nextJobId = await getNextId('jobs', 'JPID');
         } catch (err) {
             return res.status(500).json({
                 status: 'fail',
-                message: 'Error generating Jobid!',
+                message: 'Error generating Job ID!',
             });
         }
 
-        // Add the generated ID to the request body
-        req.body.job_id = nextJobId;
+        // Allow only 'draft' or 'active' status
+        let { status } = req.body;
+        if (!['draft', 'active'].includes(status)) {
+            status = 'active'; // Default to active if status is not provided
+        }
 
-        // Create the new job
+        req.body.job_id = nextJobId;
+        req.body.status = status;
+
         const newJob = await Job.create(req.body);
 
-        // Increment the counter only after successful creation
+        // Increment counter
         await Counter.findOneAndUpdate(
             { name: 'jobs' },
             { $inc: { value: 1 } },
@@ -121,6 +125,7 @@ exports.createJob = async (req, res) => {
 
         res.status(201).json({
             status: 'success',
+            message: `Job ${status === 'draft' ? 'saved as draft' : 'posted successfully'}`,
             data: {
                 job: newJob,
             },
@@ -129,6 +134,39 @@ exports.createJob = async (req, res) => {
         res.status(500).json({
             status: 'fail',
             message: `Error creating job: ${err.message}`,
+        });
+    }
+};
+exports.publishJob = async (req, res) => {
+    try {
+        const job = await Job.findById(req.params.id);
+
+        if (!job) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Job not found',
+            });
+        }
+
+        if (job.status !== 'draft') {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Only draft jobs can be published',
+            });
+        }
+
+        job.status = 'active';
+        await job.save();
+
+        res.status(200).json({
+            status: 'success',
+            message: 'Job published successfully',
+            data: { job },
+        });
+    } catch (err) {
+        res.status(500).json({
+            status: 'fail',
+            message: `Error publishing job: ${err.message}`,
         });
     }
 };
