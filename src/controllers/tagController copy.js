@@ -137,41 +137,19 @@ exports.toggleTagStatus = async (req, res) => {
 exports.getPopularTags = async (req, res) => {
     try {
         let popularTags = await Tag.aggregate([
-            // Match active tags
             { $match: { status: 'active' } },
 
-            // Preserve the original title
-            { $addFields: { originalTitle: '$title' } },
-
-            // Lookup associated categories
-            {
-                $lookup: {
-                    from: 'categories',
-                    localField: '_id',
-                    foreignField: 'tags',
-                    as: 'categories'
-                }
-            },
-
-            // Unwind categories array
-            {
-                $unwind: {
-                    path: '$categories',
-                    preserveNullAndEmptyArrays: true
-                }
-            },
-
-            // Lookup associated jobs
+            // Get associated jobs
             {
                 $lookup: {
                     from: 'jobs',
-                    localField: 'categories._id',
-                    foreignField: 'category',
+                    localField: '_id',
+                    foreignField: 'tags',
                     as: 'jobs'
                 }
             },
 
-            // Lookup freelancer subscribers
+            // Get freelancer subscribers
             {
                 $lookup: {
                     from: 'freelancers',
@@ -181,7 +159,7 @@ exports.getPopularTags = async (req, res) => {
                 }
             },
 
-            // Add computed fields
+            // Compute counts
             {
                 $addFields: {
                     jobCount: { $size: { $ifNull: ['$jobs', []] } },
@@ -195,28 +173,34 @@ exports.getPopularTags = async (req, res) => {
                 }
             },
 
-            // Sort by popularityScore in descending order
             { $sort: { popularityScore: -1 } },
-
-            // Limit to top 6
             { $limit: 6 },
 
-            // Project the desired fields
+            // Only keep necessary fields
             {
                 $project: {
                     _id: 1,
-                    title: '$originalTitle', // Use the preserved title
+                    title: 1,
                     jobCount: 1,
                     subscriberCount: 1
                 }
             }
         ]);
 
-        // Fallback: If no popular tags, return any active ones
+        // If no popular tags, return random active tags
         if (popularTags.length === 0) {
-            popularTags = await Tag.find({ status: 'active' })
-                .limit(6)
-                .select('_id title');
+            popularTags = await Tag.aggregate([
+                { $match: { status: 'active' } },
+                { $sample: { size: 6 } }, // Randomly pick 6 active tags
+                {
+                    $project: {
+                        _id: 1,
+                        title: 1,
+                        jobCount: { $literal: 0 }, // No jobs
+                        subscriberCount: { $literal: 0 } // No subscribers
+                    }
+                }
+            ]);
         }
 
         res.status(200).json({
