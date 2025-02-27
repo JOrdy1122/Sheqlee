@@ -134,20 +134,19 @@ exports.toggleTagStatus = async (req, res) => {
 // };
 
 
-
 exports.getPopularTags = async (req, res) => {
     try {
+        console.log('🚀 [START] Fetching popular tags...');
+
         let popularTags = await Tag.aggregate([
             { $match: { status: 'active' } },
-
-            // ✅ Ensure title is carried forward
+            
             {
                 $addFields: {
-                    tagTitle: '$title', // Store original title before lookups
+                    tagTitle: '$title',
                 },
             },
 
-            // Get associated categories
             {
                 $lookup: {
                     from: 'categories',
@@ -157,9 +156,13 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            { $unwind: { path: '$categories', preserveNullAndEmptyArrays: true } },
+            {
+                $unwind: {
+                    path: '$categories',
+                    preserveNullAndEmptyArrays: true,
+                },
+            },
 
-            // Get associated jobs
             {
                 $lookup: {
                     from: 'jobs',
@@ -169,7 +172,6 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            // Get freelancer subscribers
             {
                 $lookup: {
                     from: 'freelancers',
@@ -179,7 +181,6 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            // Add computed fields
             {
                 $addFields: {
                     jobCount: { $size: { $ifNull: ['$jobs', []] } },
@@ -196,32 +197,41 @@ exports.getPopularTags = async (req, res) => {
             { $sort: { popularityScore: -1 } },
             { $limit: 6 },
 
-            // ✅ Ensure `title` is always included
+            // Debugging: Check raw output before projection
             {
                 $project: {
                     _id: 1,
-                    title: { $ifNull: ['$tagTitle', '$title'] }, // 👈 Use original title if tagTitle is missing
+                    tagTitle: 1, // Debugging: Verify this field exists
+                    title: 1,    // Keep the original title field
                     jobCount: 1,
                     subscriberCount: 1,
+                    popularityScore: 1,
                 },
             },
         ]);
 
-        // 🔹 Fallback: If no popular tags, return any active ones
+        console.log('🔍 [DEBUG] Aggregated Popular Tags:', JSON.stringify(popularTags, null, 2));
+
+        // 🔹 Fallback: If no popular tags found, return any active tags
         if (popularTags.length === 0) {
+            console.log('⚠️ [WARNING] No popular tags found. Fetching any active tags instead.');
+
             popularTags = await Tag.find({ status: 'active' })
                 .limit(6)
                 .select('_id title');
+
+            console.log('✅ [DEBUG] Fallback Active Tags:', JSON.stringify(popularTags, null, 2));
         }
 
-        console.log(popularTags); // ✅ Debugging
+        console.log('📤 [FINAL RESPONSE]:', JSON.stringify(popularTags, null, 2));
 
         res.status(200).json({
             success: true,
             tags: popularTags,
         });
     } catch (error) {
-        console.error('Error in getPopularTags:', error);
+        console.error('❌ [ERROR] getPopularTags:', error);
+
         res.status(500).json({
             success: false,
             message: 'Server error',
