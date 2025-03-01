@@ -35,7 +35,7 @@ const freeLancerSchema = new mongoose.Schema({
             'Password must be at least 8 characters',
         ],
         required: function () {
-            return !this.isOAuth; // ✅ Required only if NOT OAuth user
+            return !this.isOAuth; // Required only if NOT OAuth user
         },
         select: false, // Hide password in queries
     },
@@ -48,7 +48,7 @@ const freeLancerSchema = new mongoose.Schema({
             message: 'Passwords do not match!',
         },
         required: function () {
-            return !this.isOAuth; // ✅ Required only if NOT OAuth user
+            return !this.isOAuth; // Required only if NOT OAuth user
         },
     },
 
@@ -59,7 +59,7 @@ const freeLancerSchema = new mongoose.Schema({
         },
     },
     image: {
-        type: String, // URL or file path for profile picture
+        type: String, 
         trim: true,
     },
     skill: {
@@ -98,7 +98,7 @@ const freeLancerSchema = new mongoose.Schema({
         trim: true,
     },
     cvFile: {
-        type: String, // File path or URL for the CV file
+        type: String, 
         trim: true,
     },
     subscribedCompanies: [
@@ -134,7 +134,7 @@ const freeLancerSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['active', 'deleted'],
+        enum: ['active', 'deleted', 'pending'],
         default: 'active',
     },
     action: {
@@ -159,19 +159,11 @@ const freeLancerSchema = new mongoose.Schema({
         type: Date,
         default: Date.now, // Automatically set to current date
     },
-    // policy: {
-    //     type: Boolean,
-    //     required: [
-    //         true,
-    //         'You must agree to the policy to register!',
-    //     ],
-    //     default: false, // Default to false until explicitly agreed
-    // },
 });
 
 freeLancerSchema.pre('save', async function (next) {
     if (!this.isModified('password') || this.isOAuth)
-        return next(); // ✅ Skip hashing for OAuth users
+        return next(); 
     this.password = await bcrypt.hash(this.password, 12);
     this.passwordConfirm = undefined;
     next();
@@ -179,7 +171,7 @@ freeLancerSchema.pre('save', async function (next) {
 
 // Pre-save Middleware to Set `isUpdating` Automatically
 freeLancerSchema.pre('save', function (next) {
-    this.isUpdating = !this.isNew; // Set isUpdating to true if the document is not new
+    this.isUpdating = !this.isNew; 
     next();
 });
 
@@ -187,12 +179,12 @@ freeLancerSchema.methods.createPasswordResetCode =
     function () {
         const resetCode = Math.floor(
             100000 + Math.random() * 900000
-        ).toString(); // 6-digit random code
+        ).toString(); 
 
         this.passwordResetCode = crypto
             .createHash('sha256')
             .update(resetCode)
-            .digest('hex'); // Hash before storing
+            .digest('hex'); 
 
         this.passwordResetCodeExpires =
             Date.now() + 10 * 60 * 1000; // Expires in 10 min

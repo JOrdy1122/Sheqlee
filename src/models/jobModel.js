@@ -13,14 +13,13 @@ const jobSchema = new mongoose.Schema({
     },
     category: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Category', // Reference to the Category model
+        ref: 'Category',
         required: [true, 'Job category is required'],
     },
     company: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Company', // Reference to the Company model
-        required: true, // Every job must belong to a company
-        default: [],
+        ref: 'Company', 
+        required: [true, 'Job company is required'] 
     },
     jobType: {
         type: String,
@@ -31,7 +30,7 @@ const jobSchema = new mongoose.Schema({
             'Full-time',
             'Per diem',
             'Temporary',
-        ], // Example values
+        ], 
     },
     skillLevel: {
         type: String,
@@ -42,7 +41,7 @@ const jobSchema = new mongoose.Schema({
             'Intermediate',
             'Senior',
             'Expert',
-        ], // Example values
+        ], 
     },
     salary: {
         amount: {
@@ -50,7 +49,7 @@ const jobSchema = new mongoose.Schema({
             required: [true, 'Salary amount is required'],
             validate: {
                 validator: function (v) {
-                    return v >= 0; // Ensures the salary is not negative
+                    return v >= 0; 
                 },
                 message:
                     'Salary must be greater than or equal to 0',
@@ -59,12 +58,12 @@ const jobSchema = new mongoose.Schema({
         currency: {
             type: String,
             required: [true, 'Currency is required'],
-            enum: ['USD', 'Birr', 'EUR', 'GBP'], // Extend as needed
+            enum: ['USD', 'Birr', 'EUR', 'GBP'], 
         },
         rate: {
             type: String,
             required: [true, 'Salary rate is required'],
-            enum: ['hour', 'day', 'week', 'month', 'year'], // Example values
+            enum: ['hour', 'day', 'week', 'month', 'year'], 
         },
     },
     shortDescription: {
@@ -90,11 +89,11 @@ const jobSchema = new mongoose.Schema({
         trim: true,
     },
     skills: {
-        type: [String], // Array of strings for skill names
+        type: [String], 
         required: [true, 'Skills are required'],
         validate: {
             validator: function (v) {
-                return v.length > 0; // Ensure at least one skill is provided
+                return v.length > 0; 
             },
             message: 'At least one skill is required',
         },
@@ -104,7 +103,7 @@ const jobSchema = new mongoose.Schema({
         required: [true, 'Apply link is required'],
         validate: {
             validator: function (v) {
-                return /^(https?:\/\/|mailto:)/.test(v); // Ensure it's a URL or email
+                return /^(https?:\/\/|mailto:)/.test(v); 
             },
             message:
                 'Please provide a valid URL or email for the apply link',
@@ -112,7 +111,7 @@ const jobSchema = new mongoose.Schema({
     },
     hideCompanyName: {
         type: Boolean,
-        default: false, // Default is to show the company name
+        default: false, 
     },
     appliedFreelancers: {
         type: [mongoose.Schema.Types.ObjectId],
@@ -131,7 +130,7 @@ const jobSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: Date.now, // Automatically set the creation date
+        default: Date.now, 
     },
 });
 

@@ -78,8 +78,8 @@ exports.getAllDeletionRequests = async (req, res) => {
 
 exports.updateDeletionRequest = async (req, res) => {
     try {
-        const { id } = req.params; // Deletion request ID
-        const { status } = req.body; // Status: 'approved' or 'rejected'
+        const { id } = req.params; 
+        const { status } = req.body; 
 
         const request = await DeletionRequest.findById(id);
         if (!request) {

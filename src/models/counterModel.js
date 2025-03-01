@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const counterSchema = new mongoose.Schema({
-    //when clear collection use entityName and anything else use name
+    
     name: {
         type: String, // e.g., 'category', 'jobs', etc.
         required: true,

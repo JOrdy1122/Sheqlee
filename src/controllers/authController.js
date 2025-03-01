@@ -41,7 +41,7 @@ exports.requestDeletion = async (req, res) => {
         });
     } catch (err) {
         console.error(
-            '❌ Error submitting deletion request:',
+            'Error submitting deletion request:',
             err
         );
         res.status(500).json({
@@ -53,7 +53,7 @@ exports.requestDeletion = async (req, res) => {
 
 exports.handleGoogleCallback = async (req, res) => {
     try {
-        console.log('✅ Google OAuth successful!');
+        console.log('Google OAuth successful!');
 
         // Determine the role from the request URL
         let role;
@@ -71,7 +71,7 @@ exports.handleGoogleCallback = async (req, res) => {
             role = 'Company';
         } else {
             console.error(
-                '❌ Invalid OAuth callback route!'
+                'Invalid OAuth callback route!'
             );
             return res.status(400).json({
                 status: 'fail',
@@ -86,7 +86,7 @@ exports.handleGoogleCallback = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
-        console.log('✅ JWT Token Generated:', token);
+        console.log('JWT Token Generated:', token);
 
         res.json({
             status: 'success',
@@ -95,7 +95,7 @@ exports.handleGoogleCallback = async (req, res) => {
         });
     } catch (err) {
         console.error(
-            '❌ Error handling Google OAuth callback:',
+            'Error handling Google OAuth callback:',
             err
         );
         res.status(500).json({
@@ -108,7 +108,7 @@ exports.handleGoogleCallback = async (req, res) => {
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
-        console.log('🔍 Checking email:', email);
+        console.log('Checking email:', email);
 
         // Step 1: Find the user in the UserIndex
         const userIndex = await UserIndex.findOne({
@@ -116,7 +116,7 @@ exports.login = async (req, res) => {
         });
 
         if (!userIndex) {
-            console.log('🚨 No user found in UserIndex!');
+            console.log(' No user found in UserIndex!');
             return res.status(404).json({
                 status: 'fail',
                 message: 'User not found.',
@@ -124,7 +124,7 @@ exports.login = async (req, res) => {
         }
 
         console.log(
-            '✅ Found user in UserIndex:',
+            'Found user in UserIndex:',
             userIndex
         );
 
@@ -139,7 +139,7 @@ exports.login = async (req, res) => {
                     : null;
 
         if (!modelName) {
-            console.log('🚨 Invalid user role!');
+            console.log('Invalid user role!');
             return res.status(400).json({
                 status: 'fail',
                 message: 'Invalid user role.',
@@ -153,13 +153,13 @@ exports.login = async (req, res) => {
             .select('+password'); // Force Mongoose to return the password
 
         console.log(
-            '🔍 Retrieved userDetails:',
+            ' Retrieved userDetails:',
             userDetails
         );
 
         if (!userDetails) {
             console.log(
-                '🚨 User details missing in database!'
+                'User details missing in database!'
             );
             return res.status(404).json({
                 status: 'fail',
@@ -169,7 +169,7 @@ exports.login = async (req, res) => {
         // Step 4: Check if action is inactive → Block login
         if (userDetails.action === 'inactive') {
             console.log(
-                '🚨 Login blocked: Freelancer is inactive!'
+                'Login blocked: Freelancer is inactive!'
             );
             return res.status(403).json({
                 status: 'fail',
@@ -177,7 +177,7 @@ exports.login = async (req, res) => {
                     'Your account is inactive. Contact support for assistance.',
             });
         }
-        // ✅ Check for pending deletion request
+        // Check for pending deletion request
         const deletionRequest =
             await DeletionRequest.findOne({
                 account_Id: userDetails._id,
@@ -191,25 +191,25 @@ exports.login = async (req, res) => {
         }
 
         console.log(
-            '🔍 Full userDetails object:',
+            'Full userDetails object:',
             userDetails
         );
 
         console.log(
-            '🔍 Password in database:',
+            'Password in database:',
             userDetails?.password
         );
-        console.log('🔍 Password from request:', password);
+        console.log('Password from request:', password);
 
         // Step 4: Validate the password
-        console.log('🔑 Checking password...');
+        console.log('Checking password...');
         const isPasswordCorrect = await bcrypt.compare(
             password,
             userDetails.password
         );
 
         if (!isPasswordCorrect) {
-            console.log('🚨 Incorrect password attempt!');
+            console.log(' Incorrect password attempt!');
             return res.status(401).json({
                 status: 'fail',
                 message: 'Incorrect password.',
@@ -217,7 +217,7 @@ exports.login = async (req, res) => {
         }
 
         // Step 5: Generate JWT token
-        console.log('🔐 Generating token...');
+        console.log('Generating token...');
         const token = jwt.sign(
             {
                 userId: userDetails._id,
@@ -228,14 +228,14 @@ exports.login = async (req, res) => {
         );
 
         // Step 6: Return success response
-        console.log('✅ Login successful!');
+        console.log(' Login successful!');
         res.status(200).json({
             status: 'success',
             message: 'Logged in successfully!',
             token,
         });
     } catch (err) {
-        console.error('❌ Error during login:', err);
+        console.error(' Error during login:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error logging in.',
@@ -331,8 +331,8 @@ exports.signupCompany = async (req, res) => {
         // After creating the company, create an entry in UserIndex
         await UserIndex.create({
             email: newCompany.email,
-            role: 'Company', // ✅ Lowercase for reference
-            modelName: 'Company', // ✅ Correct case for Mongoose population
+            role: 'Company', 
+            modelName: 'Company', 
             userId: newCompany._id,
         });
 
@@ -448,8 +448,8 @@ exports.signupFreelancer = async (req, res) => {
         // After creating the freelancer, create an entry in UserIndex
         await UserIndex.create({
             email: newFreelancer.email,
-            role: 'Freelancer', // ✅ Lowercase for reference
-            modelName: 'Freelancer', // ✅ Correct case for Mongoose population
+            role: 'Freelancer', 
+            modelName: 'Freelancer', 
             userId: newFreelancer._id,
         });
 

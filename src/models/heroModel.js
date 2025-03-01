@@ -11,19 +11,18 @@ const heroSchema = new mongoose.Schema(
             required: [true, 'Description is required'],
         },
         animation: {
-            type: String, // URL or file path for animation JSON
+            type: String, 
             required: [true, 'Animation URL is required'],
         },
         createdAt: {
             type: Date,
-            default: Date.now, // Auto-set timestamp for record creation
+            default: Date.now, 
         },
         updatedAt: {
             type: Date,
-            default: Date.now, // Auto-set timestamp for record update
+            default: Date.now, 
         },
     },
-    { timestamps: true }
-); // Automatically adds `createdAt` and `updatedAt`
 
+); 
 module.exports = mongoose.model('Hero', heroSchema);

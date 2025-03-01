@@ -141,9 +141,23 @@ exports.updateCompany = async (req, res) => {
     }
 };
 
-exports.createJobPosts = async (req, res) => {
-    res.status(200).json({
-        status: 'success',
-        message: ' This route has not been created yet!',
-    });
+exports.deleteCompany = async (req, res) => {
+    try {
+        const company = Company.findByIdAndDelete(
+            req.params.id
+        );
+
+        res.status(204).json({
+            status: 'success',
+            data: {
+                company,
+            },
+        });
+    } catch (err) {
+        console.log('Error deleting a Company ', err);
+        res.status(500).json({
+            status: 'Fail',
+            message: 'Error Deleting a client',
+        });
+    }
 };

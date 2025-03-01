@@ -1,19 +1,22 @@
 const Feedback = require('../models/feedbackModel');
 const ApiFeatures = require('../utils/apiFeatures');
+const getNextId = require('../utils/getNextId');
+const Counter = require('../models/counterModel');
+const ApiFeatures = require('../utils/apiFeatures');
 
 // Get all feedback with filtering, search, and pagination
 exports.getAllFeedback = async (req, res) => {
     try {
         let query = Feedback.find();
 
-        // Apply API features (filtering, searching, pagination)
+        // Apply API features 
         const apiFeatures = new ApiFeatures(
             query,
             req.query
         )
             .filter()
-            .search(['message']) // Search in these fields
-            .paginate(); // Uses default limit
+            .search(['message']) 
+            .paginate(); 
 
         const feedbacks = await apiFeatures.query;
 
@@ -56,11 +59,6 @@ exports.getFeedback = async (req, res) => {
         });
     }
 };
-
-const Feedback = require('../models/feedbackModel');
-const getNextId = require('../utils/getNextId');
-const Counter = require('../models/counterModel');
-const ApiFeatures = require('../utils/apiFeatures');
 
 // Create feedback with unique ID (FDID)
 exports.createFeedback = async (req, res) => {

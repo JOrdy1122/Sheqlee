@@ -26,13 +26,12 @@ const subscriptionRoutes = require('./src/routes/subscriptionRoutes');
 const authRoutes = require('./src/routes/authRoutes');
 const pageRoutes = require('./src/routes/pagesRoutes');
 const footerRoutes = require('./src/routes/footerRoutes');
+const testimonialRoutes = require('./src/routes/testimonialRoutes');
 
 const app = express();
 
 // Enable CORS before your routes
-app.use(
-    cors()
-);
+app.use(cors());
 
 app.use(passport.initialize());
 
@@ -61,7 +60,6 @@ app.use(xss());
 
 //Compression (Reduce Response Size)**
 app.use(compression());
-
 
 // Development logging
 if (process.env.NODE_ENV === 'development') {
@@ -106,6 +104,10 @@ app.use(
 app.use('/api.sheqlee.com/v1/auth', authRoutes);
 app.use('/api.sheqlee.com/v1/pages', pageRoutes);
 app.use('/api.sheqlee.com/v1/footers', footerRoutes);
+app.use(
+    '/api.sheqlee.com/v1/testimonials',
+    testimonialRoutes
+);
 
 // Global error handling middleware
 app.use((err, req, res, next) => {

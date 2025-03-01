@@ -4,7 +4,7 @@ const testimonialSchema = new mongoose.Schema(
     {
         logo: {
             type: String,
-            required: [true, 'Logo is required'], // URL for the company's logo
+            required: [true, 'Logo is required'], 
         },
         company: {
             type: String,
@@ -23,19 +23,18 @@ const testimonialSchema = new mongoose.Schema(
         },
         position: {
             type: String,
-            required: [true, 'Position is required'], // Position of the representative
+            required: [true, 'Position is required'], 
         },
         createdAt: {
             type: Date,
-            default: Date.now, // Auto-set timestamp for record creation
+            default: Date.now, 
         },
         updatedAt: {
             type: Date,
-            default: Date.now, // Auto-set timestamp for record update
+            default: Date.now, 
         },
     },
-    { timestamps: true }
-); // Automatically adds `createdAt` and `updatedAt`
+); 
 
 module.exports = mongoose.model(
     'Testimonial',

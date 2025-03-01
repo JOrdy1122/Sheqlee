@@ -6,11 +6,11 @@ const pageSchema = new mongoose.Schema(
             type: String,
             required: true,
             trim: true,
-            unique: true, // Titles like "About", "Pricing","privacy" etc., should be unique
+            unique: true, 
         },
         content: {
             type: String,
-            required: true, // The formatted text for the page
+            required: true, 
         },
         iteration: {
             type: String,
@@ -19,17 +19,14 @@ const pageSchema = new mongoose.Schema(
         },
         updatedBy: {
             type: mongoose.Schema.Types.ObjectId,
-            ref: 'User', // Reference to the User model
+            ref: 'User', 
             required: true,
         },
         updatedOn: {
             type: Date,
-            default: Date.now, // Auto-update to the current date on each save
+            default: Date.now, 
         },
     },
-    {
-        timestamps: true, // Automatically include createdAt and updatedAt fields
-    }
 );
 
 module.exports = mongoose.model('Page', pageSchema);

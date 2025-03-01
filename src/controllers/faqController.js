@@ -49,8 +49,8 @@ exports.getAllFaq = async (req, res) => {
             req.query
         )
             .filter()
-            .search(['question', 'answer']) // Adjust searchable fields
-            .paginate(); // 🔹 Uses default limit (7 per page)
+            .search(['question']) 
+            .paginate(); // 
 
         const faqs = await apiFeatures.query;
 

@@ -10,7 +10,7 @@ const tagSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Tag title is required'],
         trim: true,
-        unique: true, // Ensures no duplicate tags
+        unique: true, 
     },
 
     icon: {
@@ -35,7 +35,7 @@ const tagSchema = new mongoose.Schema({
     categories: {
         type: [mongoose.Schema.Types.ObjectId], // Reference to the Job model
         ref: 'Category',
-        default: [], // Default to an empty array
+        default: [],
     },
     status: {
         type: String,

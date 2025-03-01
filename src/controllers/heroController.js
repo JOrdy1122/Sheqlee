@@ -46,11 +46,11 @@ exports.getHero = async (req, res) => {
 
 exports.updateHero = async (req, res) => {
     try {
-        // ✅ Update hero with validation
+        //  Update hero with validation
         const updatedHero = await Hero.findByIdAndUpdate(
             req.params.id,
             req.body,
-            { new: true, runValidators: true } // Corrected typo
+            { new: true, runValidators: true } 
         );
 
         if (!updatedHero) {
@@ -61,14 +61,14 @@ exports.updateHero = async (req, res) => {
         }
 
         res.status(200).json({
-            // ✅ Fixed "satus" typo
+            //  Fixed "satus" typo
             status: 'success',
             data: {
                 hero: updatedHero, // Renamed for clarity
             },
         });
     } catch (err) {
-        console.error('❌ Error updating hero:', err); // ✅ Log error for debugging
+        console.error(' Error updating hero:', err); 
         res.status(500).json({
             status: 'fail',
             message: 'Error updating hero',

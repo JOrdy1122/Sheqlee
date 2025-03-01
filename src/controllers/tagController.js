@@ -28,7 +28,7 @@ exports.toggleTagStatus = async (req, res) => {
             data: tag,
         });
     } catch (err) {
-        console.error('❌ Error toggling tag status:', err);
+        console.error(' Error toggling tag status:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error toggling tag status!',
@@ -41,7 +41,7 @@ exports.getPopularTags = async (req, res) => {
         let popularTags = await Tag.aggregate([
             { $match: { status: 'active' } },
 
-            // ✅ Ensure title is carried forward
+            
             {
                 $addFields: {
                     tagTitle: '$title', // Store original title before lookups
@@ -85,7 +85,7 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
-            // Add computed fields
+          
             {
                 $addFields: {
                     jobCount: {
@@ -118,13 +118,13 @@ exports.getPopularTags = async (req, res) => {
             { $sort: { popularityScore: -1 } },
             { $limit: 6 },
 
-            // ✅ Ensure `title` is always included
+           
             {
                 $project: {
                     _id: 1,
                     title: {
                         $ifNull: ['$tagTitle', '$title'],
-                    }, // 👈 Use original title if tagTitle is missing
+                    }, 
                     jobCount: 1,
                     subscriberCount: 1,
                 },
@@ -140,7 +140,7 @@ exports.getPopularTags = async (req, res) => {
                 .select('_id title');
         }
 
-        console.log(popularTags); // ✅ Debugging
+        console.log(popularTags); 
 
         res.status(200).json({
             success: true,
@@ -196,8 +196,8 @@ exports.getAllTags = async (req, res) => {
             req.query
         )
             .filter()
-            .search(['title']) // Adjust searchable fields
-            .paginate(); // 🔹 Uses default limit (7 per page)
+            .search(['title']) 
+            .paginate(); // 
 
         const tags = await apiFeatures.query;
 
@@ -245,8 +245,8 @@ exports.updateTag = async (req, res) => {
             req.params.id,
             req.body,
             {
-                new: true, // Return the updated document
-                runValidators: true, // Validate the updated fields
+                new: true, 
+                runValidators: true, 
             }
         );
 

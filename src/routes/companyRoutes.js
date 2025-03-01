@@ -44,7 +44,7 @@ router.get(
 
 router.post('/auth/signup', signupCompany);
 
-router.post('/auth/login', login);
+// router.post('/auth/login', login);
 
 router.route('/').get(getAllCompanies);
 

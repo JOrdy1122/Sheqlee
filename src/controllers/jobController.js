@@ -34,11 +34,11 @@ exports.getSubscribedJobs = async (req, res) => {
                 { category: { $in: subscribedCategories } },
                 { tags: { $in: subscribedTags } },
             ],
-            status: 'active', // Only show active jobs
+            status: 'active', 
         })
-            .populate('company', 'companyName logo') // Include company details
-            .populate('category', 'name') // Include category details
-            .populate('tags', 'name'); // Include tag details
+            .populate('company', 'companyName logo') 
+            .populate('category', 'name') 
+            .populate('tags', 'name'); 
 
         res.status(200).json({
             status: 'success',
@@ -64,7 +64,7 @@ exports.getLatestJobs = async (req, res) => {
             status: 'active',
         })
             .sort({ createdAt: -1 })
-            .limit(10);
+            .limit(10).populate('company','name');
 
         if (latestJobs.length === 0) {
             return res.status(200).json({
@@ -109,7 +109,7 @@ exports.createJob = async (req, res) => {
         // Allow only 'draft' or 'active' status
         let { status } = req.body;
         if (!['draft', 'active'].includes(status)) {
-            status = 'active'; // Default to active if status is not provided
+            status = 'active'; 
         }
 
         req.body.job_id = nextJobId;
@@ -180,13 +180,9 @@ exports.getAvailableJobs = async (req, res) => {
         )
             .filter()
             .search()
-            .sort()
             .paginate(12);
 
-        const jobs = await features.query.populate(
-            'company',
-            'companyName logo'
-        );
+        const jobs = await features.query.populate('company');
 
         res.status(200).json({
             status: 'success',
@@ -194,7 +190,7 @@ exports.getAvailableJobs = async (req, res) => {
             data: { jobs },
         });
     } catch (err) {
-        console.error('❌ Error fetching jobs:', err);
+        console.error('Error fetching jobs:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error fetching available jobs',

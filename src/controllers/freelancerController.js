@@ -7,8 +7,8 @@ const ApiFeatures = require('../utils/apiFeatures');
 
 exports.toggleTagSubscription = async (req, res) => {
     try {
-        const { userId } = req.user; // Extract the logged-in freelancer's ID
-        const { tagId } = req.body; // Get the tag ID from request body
+        const { userId } = req.user; 
+        const { tagId } = req.body; 
 
         if (!tagId) {
             return res.status(400).json({
@@ -59,7 +59,7 @@ exports.toggleTagSubscription = async (req, res) => {
         });
     } catch (err) {
         console.error(
-            '❌ Error toggling tag subscription:',
+            ' Error toggling tag subscription:',
             err
         );
         res.status(500).json({
@@ -123,7 +123,7 @@ exports.toggleCategorySubscription = async (req, res) => {
         });
     } catch (err) {
         console.error(
-            '❌ Error toggling category subscription:',
+            ' Error toggling category subscription:',
             err
         );
         res.status(500).json({
@@ -179,7 +179,7 @@ exports.toggleApplyJob = async (req, res) => {
         });
     } catch (err) {
         console.error(
-            '❌ Error updating applied jobs:',
+            ' Error updating applied jobs:',
             err
         );
         res.status(500).json({
@@ -208,12 +208,12 @@ exports.getAppliedJobs = async (req, res) => {
 
         res.status(200).json({
             status: 'success',
-            result: freelancer.appliedJobs.length, // Count of applied jobs
-            data: freelancer.appliedJobs, // List of applied jobs
+            result: freelancer.appliedJobs.length, 
+            data: freelancer.appliedJobs, 
         });
     } catch (err) {
         console.error(
-            '❌ Error fetching applied jobs:',
+            ' Error fetching applied jobs:',
             err
         );
         res.status(500).json({
@@ -252,9 +252,9 @@ exports.toggleFavoriteJob = async (req, res) => {
             await Freelancer.findByIdAndUpdate(
                 userId,
                 isFavorited
-                    ? { $pull: { favorites: jobId } } // Remove from favorites
-                    : { $addToSet: { favorites: jobId } }, // Add if not already present
-                { new: true, runValidators: false } // Ensures passwordConfirm doesn’t trigger
+                    ? { $pull: { favorites: jobId } } 
+                    : { $addToSet: { favorites: jobId } }, 
+                { new: true, runValidators: false } // 
             );
 
         res.status(200).json({
@@ -262,11 +262,11 @@ exports.toggleFavoriteJob = async (req, res) => {
             message: isFavorited
                 ? 'Job removed from favorites!'
                 : 'Job added to favorites!',
-            data: updatedFreelancer.favorites, // Return updated favorites
+            data: updatedFreelancer.favorites, 
         });
     } catch (err) {
         console.error(
-            '❌ Error updating favorite jobs:',
+            ' Error updating favorite jobs:',
             err
         );
         res.status(500).json({
@@ -276,7 +276,7 @@ exports.toggleFavoriteJob = async (req, res) => {
     }
 };
 
-// ✅ Get Favorite Jobs List
+// Get Favorite Jobs List
 exports.getFavoriteJobs = async (req, res) => {
     try {
         const { userId } = req.user;
@@ -300,7 +300,7 @@ exports.getFavoriteJobs = async (req, res) => {
         });
     } catch (err) {
         console.error(
-            '❌ Error fetching favorite jobs:',
+            ' Error fetching favorite jobs:',
             err
         );
         res.status(500).json({
@@ -329,7 +329,7 @@ exports.toggleFreelancerAction = async (req, res) => {
                 ? 'inactive'
                 : 'active';
 
-        await freelancer.save(); // ✅ Save the updated status
+        await freelancer.save(); // Save the updated status
 
         res.status(200).json({
             status: 'success',
@@ -576,41 +576,22 @@ exports.getFreelancer = async (req, res) => {
         });
     }
 };
-// exports.updateFreelancer = async (req, res) => {
-//     try {
-//         const updatedFreelancer =
-//             Freelancer.findByIdAndUpdate(req.params.id);
-
-//         res.status(200).json({
-//             status: 'success!',
-//             data: {
-//                 updatedFreelancer,
-//             },
-//         });
-//     } catch (err) {
-//         console.log('ERROR updating Freelancer: ', err);
-//         res.status(500).json({
-//             status: 'Fail',
-//             message: 'ERROR updating the freelancer !',
-//         });
-//     }
-// };
 
 exports.updateFreelancer = async (req, res) => {
     try {
         let updateData = { ...req.body }; // Clone request body
 
-        // ✅ Handle Image Upload (Create/Update)
+        // Handle Image Upload (Create/Update)
         if (req.files && req.files.image) {
             updateData.image = `/uploads/${req.files.image[0].filename}`;
         }
 
-        // ✅ Handle CV Upload (Create/Update)
+        // Handle CV Upload (Create/Update)
         if (req.files && req.files.cvFile) {
             updateData.cvFile = `/uploads/${req.files.cvFile[0].filename}`;
         }
 
-        // ✅ Update freelancer details
+        // Update freelancer details
         const updatedFreelancer =
             await Freelancer.findByIdAndUpdate(
                 req.params.id,
@@ -646,14 +627,22 @@ exports.updateFreelancer = async (req, res) => {
 };
 
 exports.deleteFreelancer = async (req, res) => {
-    const freelancer = Freelancer.findByIdAndDelete(
-        req.params.id
-    );
+    try {
+        const freelancer = Freelancer.findByIdAndDelete(
+            req.params.id
+        );
 
-    res.status(204).json({
-        status: 'success',
-        data: {
-            freelancer,
-        },
-    });
+        res.status(204).json({
+            status: 'success',
+            data: {
+                freelancer,
+            },
+        });
+    } catch (err) {
+        console.log('Error deleting a Freelancer ', err);
+        res.status(500).json({
+            status: 'Fail',
+            message: 'Error Deleting a Freelancer',
+        });
+    }
 };

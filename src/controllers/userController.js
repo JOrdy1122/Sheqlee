@@ -1,7 +1,7 @@
 const Users = require('./../models/userModel');
-const Counter = require('../models/counterModel'); // Counter model for managing custom IDs
-const getNextId = require('../utils/getNextId'); // Utility function for generating custom IDs
-const logger = require('../utils/logger'); // Import logger
+const Counter = require('../models/counterModel'); 
+const getNextId = require('../utils/getNextId'); 
+const logger = require('../utils/logger'); 
 
 exports.createUser = async (req, res) => {
     try {
@@ -66,8 +66,8 @@ exports.getAllUsers = async (req, res) => {
             req.query
         )
             .filter()
-            .search(['name', 'email']) // 🔹 Allow searching by name or email
-            .paginate(); // 🔹 Uses default limit (7 per page)
+            .search(['name', 'email']) 
+            .paginate(); 
 
         const users = await apiFeatures.query;
 
@@ -118,16 +118,13 @@ exports.updateUser = async (req, res) => {
 
 exports.deleteUser = async (req, res, next) => {
     try {
-        const adminId = req.user.id; // Assuming the authenticated admin is stored in req.user
+        const adminId = req.user.id; 
         const userIdToDelete = req.params.id;
 
         const user =
             await Users.findByIdAndDelete(userIdToDelete);
 
         if (!user) {
-            logger.warn(
-                `⚠️ Admin ${adminId} attempted to delete non-existent user ${userIdToDelete}`
-            );
             return next(
                 new AppError(
                     'No document found with that ID.',
@@ -137,7 +134,7 @@ exports.deleteUser = async (req, res, next) => {
         }
 
         logger.info(
-            `🗑️ Admin ${adminId} deleted user ${userIdToDelete}`
+            `Admin ${adminId} deleted user ${userIdToDelete}`
         );
 
         res.status(204).json({
@@ -146,7 +143,7 @@ exports.deleteUser = async (req, res, next) => {
         });
     } catch (error) {
         logger.error(
-            `❌ Error deleting user: ${error.message}`
+            `Error deleting user: ${error.message}`
         );
         console.log('Eror Deleting an admin', error);
         next(error);

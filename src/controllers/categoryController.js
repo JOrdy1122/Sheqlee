@@ -24,7 +24,7 @@ exports.toggleCategoryStatus = async (req, res) => {
                 ? 'inactive'
                 : 'active';
 
-        await category.save(); // ✅ Save the updated status
+        await category.save(); // 
 
         res.status(200).json({
             status: 'success',
@@ -93,8 +93,8 @@ exports.getAllCategories = async (req, res) => {
             req.query
         )
             .filter()
-            .search(['title', 'description']) // Adjust searchable fields
-            .paginate(); // 🔹 Uses default limit (7 per page)
+            .search(['title']) 
+            .paginate(); 
 
         const categories = await apiFeatures.query;
 
@@ -204,7 +204,7 @@ exports.deleteCategory = async (req, res) => {
             });
         }
         logger.info(
-            `🗑️ Admin ${req.user.id} deleted user ${req.params.id}`
+            `Admin ${req.user.id} deleted user ${req.params.id}`
         );
         res.status(204).json({
             status: 'success',

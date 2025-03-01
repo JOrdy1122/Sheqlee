@@ -36,7 +36,7 @@ const categorySchema = new mongoose.Schema({
     tags: {
         type: [mongoose.Schema.Types.ObjectId], // Reference to the Job model
         ref: 'Tag',
-        default: [], // Default to an empty array
+        default: [], 
     },
     status: {
         type: String,
@@ -61,24 +61,6 @@ categorySchema.pre('save', function (next) {
     this.updatedAt = Date.now();
     next();
 });
-
-// categorySchema.pre('save', async function (next) {
-//     const doc = this;
-//     if (!doc.isNew) return next(); // Skip if it's not a new document
-
-//     try {
-//         const counter = await Counter.findByIdAndUpdate(
-//             { _id: 'jobId' }, // Counter name
-//             { $inc: { seq: 1 } }, // Increment sequence
-//             { new: true, upsert: true } // Create if not exists
-//         );
-
-//         doc._id = `JID${String(counter.seq).padStart(4, '0')}`; // Format as JID0001
-//         next();
-//     } catch (error) {
-//         next(error);
-//     }
-// });
 
 const Category = mongoose.model('Category', categorySchema);
 

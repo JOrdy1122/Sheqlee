@@ -29,7 +29,7 @@ const userSchema = new mongoose.Schema({
     userRole: {
         type: String,
         required: [true, 'User role is required.'],
-        enum: ['admin', 'sales', 'super admin'], // Allowed roles
+        enum: ['admin', 'sales', 'super admin'], 
         default: 'admin', // Default role
     },
     phoneNumber: {
@@ -37,7 +37,7 @@ const userSchema = new mongoose.Schema({
         required: [true, 'Phone number is required!'],
         validate: {
             validator: function (v) {
-                return /^[0-9]{10,15}$/.test(v); // Basic validation for phone number
+                return /^[0-9]{10,15}$/.test(v); 
             },
             message: 'Please provide a valid phone number!',
         },
@@ -48,13 +48,13 @@ const userSchema = new mongoose.Schema({
             8,
             'Password must be at least 8 characters long.',
         ],
-        select: false, // Do not return the password field by default in queries
+        select: false, 
     },
     passwordConfirm: {
         type: String,
         validate: {
             validator: function (el) {
-                return el === this.password; // Only run this validation when password is provided
+                return el === this.password;
             },
             message: 'Passwords do not match!',
         },
@@ -66,25 +66,25 @@ const userSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: Date.now, // Automatically set creation date
+        default: Date.now, 
     },
     passwordResetCode: {
-        type: String, // The verification code sent to the user via email
-        select: false, // Do not return in queries
+        type: String, 
+        select: false, 
     },
     passwordResetCodeExpires: {
-        type: Date, // Expiry date for the password reset code
-        select: false, // Do not return in queries
+        type: Date, 
+        select: false, 
     },
     isPasswordSet: {
         type: Boolean,
-        default: false, // Initially false until the user sets their password
+        default: false, 
     },
 });
 
 // Middleware to hash password before saving to the database
 userSchema.pre('save', async function (next) {
-    // If the password field hasn't been modified, skip this middleware
+    
     if (!this.isModified('password')) return next();
 
     // Hash the password with a salt of 12 rounds

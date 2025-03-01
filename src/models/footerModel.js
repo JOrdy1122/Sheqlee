@@ -14,7 +14,7 @@ const footerSchema = new mongoose.Schema({
     },
     createdAt: {
         type: Date,
-        default: Date.now, // Automatically set creation date
+        default: Date.now, 
     },
 });
 

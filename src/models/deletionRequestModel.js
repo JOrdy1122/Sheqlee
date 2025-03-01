@@ -4,18 +4,17 @@ const deletionRequestSchema = new mongoose.Schema({
     account_Id: {
         type: mongoose.Schema.Types.ObjectId,
         required: true,
-        refPath: 'role', // Dynamic reference to either Freelancer or Client model
-        // not quite clear though so understand this one first
+        refPath: 'role', 
     },
     role: {
         type: String,
         required: true,
-        enum: ['Freelancer', 'Company'], // Role of the requester
+        enum: ['Freelancer', 'Company'], 
     },
     reason: {
         type: String,
         required: true,
-        maxlength: 128, // Limit the reason length
+        maxlength: 128, 
     },
     createdAt: {
         type: Date,
