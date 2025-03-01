@@ -65,7 +65,7 @@ exports.getLatestJobs = async (req, res) => {
             status: 'active',
         })
             .sort({ createdAt: -1 })
-            .limit(10).populate('company','name');
+            .limit(10).populate('company','companyName');
 
         if (latestJobs.length === 0) {
             return res.status(200).json({
