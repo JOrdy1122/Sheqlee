@@ -173,17 +173,46 @@ exports.publishJob = async (req, res) => {
     }
 };
 
+// exports.getAvailableJobs = async (req, res) => {
+//     try {
+//         const features = new APIFeatures(
+//             Job.find(),
+//             req.query
+//         )
+//             .filter()
+//             .search()
+//             .paginate(12);
+
+//         const jobs = await features.query.populate('company','companyName');
+
+//         res.status(200).json({
+//             status: 'success',
+//             results: jobs.length,
+//             data: { jobs },
+//         });
+//     } catch (err) {
+//         console.error('Error fetching jobs:', err);
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error fetching available jobs',
+//         });
+//     }
+// };
+
 exports.getAvailableJobs = async (req, res) => {
     try {
-        const features = new APIFeatures(
-            Job.find(),
-            req.query
-        )
+        let query = Job.find();
+
+        // Apply filtering, searching, and pagination using APIFeatures
+        const features = new APIFeatures(query, req.query)
             .filter()
             .search()
             .paginate(12);
 
-        const jobs = await features.query.populate('company','companyName');
+        // Ensure populate is done after APIFeatures processing
+        const jobs = await features.query
+            .populate('company', 'companyName') 
+            
 
         res.status(200).json({
             status: 'success',
@@ -198,6 +227,7 @@ exports.getAvailableJobs = async (req, res) => {
         });
     }
 };
+
 
 exports.getjob = async (req, res) => {
     try {
