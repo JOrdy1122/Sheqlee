@@ -173,32 +173,6 @@ exports.publishJob = async (req, res) => {
     }
 };
 
-// exports.getAvailableJobs = async (req, res) => {
-//     try {
-//         const features = new APIFeatures(
-//             Job.find(),
-//             req.query
-//         )
-//             .filter()
-//             .search()
-//             .paginate(12);
-
-//         const jobs = await features.query.populate('company','companyName');
-
-//         res.status(200).json({
-//             status: 'success',
-//             results: jobs.length,
-//             data: { jobs },
-//         });
-//     } catch (err) {
-//         console.error('Error fetching jobs:', err);
-//         res.status(500).json({
-//             status: 'fail',
-//             message: 'Error fetching available jobs',
-//         });
-//     }
-// };
-
 exports.getAvailableJobs = async (req, res) => {
     try {
         let query = Job.find();
@@ -211,7 +185,7 @@ exports.getAvailableJobs = async (req, res) => {
 
         // Ensure populate is done after APIFeatures processing
         const jobs = await features.query
-            .populate('company') 
+            .populate('company','companyName') 
             
 
         res.status(200).json({
