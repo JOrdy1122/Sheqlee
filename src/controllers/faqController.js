@@ -52,7 +52,7 @@ exports.getAllFaq = async (req, res) => {
             .search(['question']) 
             .paginate(); // 
 
-        const faqs = await apiFeatures.query;
+        const faqs = await apiFeatures.query.select('-__v');
 
         res.status(200).json({
             status: 'success',
@@ -71,7 +71,7 @@ exports.getAllFaq = async (req, res) => {
 exports.getFaq = async (req, res) => {
     try {
         // Fetch the faq by ID and populate the tags field
-        const faq = await Faq.findById(req.params.id);
+        const faq = await Faq.findById(req.params.id).select('-__v');
 
         // Check if the faq exists
         if (!faq) {

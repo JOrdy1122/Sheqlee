@@ -185,7 +185,7 @@ exports.getAvailableJobs = async (req, res) => {
 
         // Ensure populate is done after APIFeatures processing
         const jobs = await features.query
-            .populate('company','companyName') 
+            .populate('company','companyName -__v') 
             
 
         res.status(200).json({
@@ -205,7 +205,7 @@ exports.getAvailableJobs = async (req, res) => {
 
 exports.getjob = async (req, res) => {
     try {
-        const job = Job.findById(req.params.id);
+        const job = Job.findById(req.params.id).select('-__v');
         if (!job) console.log('job Could not been found!');
 
         console.log(job);

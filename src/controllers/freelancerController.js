@@ -196,7 +196,7 @@ exports.getAppliedJobs = async (req, res) => {
         // Fetch freelancer and populate applied jobs
         const freelancer =
             await Freelancer.findById(userId).populate(
-                'appliedJobs'
+                'appliedJobs', '-__v'
             );
 
         if (!freelancer) {
@@ -536,7 +536,7 @@ exports.getAllFreelancers = async (req, res) => {
             .dateFilter('createdAt') // Filter by date
             .paginate(); // Apply pagination (12 per page)
 
-        const freelancers = await apiFeatures.query;
+        const freelancers = await apiFeatures.query.select('-__v');
 
         res.status(200).json({
             status: 'success',

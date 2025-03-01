@@ -18,7 +18,7 @@ exports.getAllFeedback = async (req, res) => {
             .search(['message']) 
             .paginate(); 
 
-        const feedbacks = await apiFeatures.query;
+        const feedbacks = await apiFeatures.query.select('-__v');
 
         res.status(200).json({
             status: 'success',
@@ -39,7 +39,7 @@ exports.getFeedback = async (req, res) => {
     try {
         const feedback = await Feedback.findById(
             req.params.id
-        );
+        ).select('-__v');
         if (!feedback) {
             return res.status(404).json({
                 status: 'fail',

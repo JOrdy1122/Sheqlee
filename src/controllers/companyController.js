@@ -42,7 +42,7 @@ exports.toggleCompanyAction = async (req, res) => {
 // Get All Companies
 exports.getAllCompanies = async (req, res) => {
     try {
-        let query = Company.find().populate('subscribers');
+        let query = Company.find().populate('subscribers').select('-__v');
 
         const apiFeatures = new ApiFeatures(
             query,
@@ -73,7 +73,7 @@ exports.getCompany = async (req, res) => {
     try {
         const company = await Company.findById(
             req.params.id
-        ).populate('subscribers');
+        ).populate('subscribers').select('-__v');
 
         if (!company) {
             return res.status(404).json({

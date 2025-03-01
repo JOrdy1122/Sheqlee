@@ -86,7 +86,7 @@ exports.createCategory = async (req, res) => {
 
 exports.getAllCategories = async (req, res) => {
     try {
-        let query = Category.find().populate('tags');
+        let query = Category.find().populate('tags', '-__v');
 
         const apiFeatures = new ApiFeatures(
             query,
@@ -117,7 +117,7 @@ exports.getCategory = async (req, res) => {
         // Fetch the category by ID and populate the tags field
         const category = await Category.findById(
             req.params.id
-        ).populate('tags');
+        ).populate('tags','-__v');
 
         // Check if the category exists
         if (!category) {
