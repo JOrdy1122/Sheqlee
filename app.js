@@ -31,10 +31,7 @@ const app = express();
 
 // Enable CORS before your routes
 app.use(
-    cors({
-        origin: ['https://your-frontend-domain.com'], // ✅ Update this to your frontend's HTTPS URL
-        credentials: true,
-    })
+    cors()
 );
 
 app.use(passport.initialize());
@@ -65,15 +62,6 @@ app.use(xss());
 //Compression (Reduce Response Size)**
 app.use(compression());
 
-// Enforce HTTPS (Redirect HTTP to HTTPS)**
-app.use((req, res, next) => {
-    if (req.headers['x-forwarded-proto'] !== 'https') {
-        return res.redirect(
-            'https://' + req.headers.host + req.url
-        );
-    }
-    next();
-});
 
 // Development logging
 if (process.env.NODE_ENV === 'development') {
