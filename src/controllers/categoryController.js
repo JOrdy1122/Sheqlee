@@ -2,6 +2,8 @@ const Category = require('./../models/categoryModel');
 const getNextId = require('../utils/getNextId');
 const Counter = require('../models/counterModel');
 const Tag = require('../models/tagModel');
+const ApiFeatures = require('./../utils/apiFeatures');
+const logger = require('../utils/logger');
 
 exports.toggleCategoryStatus = async (req, res) => {
     try {
@@ -84,16 +86,22 @@ exports.createCategory = async (req, res) => {
 
 exports.getAllCategories = async (req, res) => {
     try {
-        // Fetch categories and populate the tags field
-        const categories =
-            await Category.find().populate('tags');
+        let query = Category.find().populate('tags');
+
+        const apiFeatures = new ApiFeatures(
+            query,
+            req.query
+        )
+            .filter()
+            .search(['title', 'description']) // Adjust searchable fields
+            .paginate(); // 🔹 Uses default limit (7 per page)
+
+        const categories = await apiFeatures.query;
 
         res.status(200).json({
             status: 'success',
             results: categories.length,
-            data: {
-                categories,
-            },
+            data: { categories },
         });
     } catch (err) {
         console.error('Error fetching categories:', err);
@@ -195,6 +203,9 @@ exports.deleteCategory = async (req, res) => {
                 message: 'Category not found',
             });
         }
+        logger.info(
+            `🗑️ Admin ${req.user.id} deleted user ${req.params.id}`
+        );
         res.status(204).json({
             status: 'success',
             data: null,

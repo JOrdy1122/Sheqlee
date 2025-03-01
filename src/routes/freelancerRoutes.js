@@ -56,7 +56,7 @@ router.get(
 
 // for sign up and login authentication
 router.post('/auth/signup', signupFreelancer);
-router.post('/auth/login', login);
+// router.post('/auth/login', login);
 
 // ✅ Add/Remove Favorite Job
 router.patch('/favorites', protect, toggleFavoriteJob);

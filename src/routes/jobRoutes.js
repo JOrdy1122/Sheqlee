@@ -10,7 +10,7 @@ const {
     deletejob,
     getLatestJobs,
     getSubscribedJobs,
-    publishJob
+    publishJob,
 } = jobController;
 
 const router = express.Router();

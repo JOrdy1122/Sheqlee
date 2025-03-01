@@ -21,19 +21,20 @@ exports.createHero = async (req, res) => {
 
 exports.getHero = async (req, res) => {
     try {
-        // Fetch the first (or only) hero
-        const hero = await Hero.findOne();
+        //fetchs hero
+        const hero = await Hero.findById(req.params.id);
 
         if (!hero) {
             return res.status(404).json({
-                status: 'fail',
-                message: 'Hero section not found!',
+                status: 'Fail',
+                message: 'Hero section Not Found!',
             });
         }
-
         res.status(200).json({
             status: 'success',
-            data: { hero },
+            data: {
+                hero,
+            },
         });
     } catch (err) {
         res.status(500).json({

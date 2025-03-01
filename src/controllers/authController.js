@@ -8,6 +8,7 @@ const UserIndex = require('../models/userIndexModel');
 const mongoose = require('mongoose');
 const AccountService = require('./../services/accountServices');
 const DeletionRequest = require('./../models/deletionRequestModel');
+const logger = require('../utils/logger');
 
 exports.requestDeletion = async (req, res) => {
     try {
@@ -228,13 +229,11 @@ exports.login = async (req, res) => {
 
         // Step 6: Return success response
         console.log('✅ Login successful!');
-       res.status(200).json({
+        res.status(200).json({
             status: 'success',
             message: 'Logged in successfully!',
-           role: userIndex.role,
             token,
         });
-
     } catch (err) {
         console.error('❌ Error during login:', err);
         res.status(500).json({

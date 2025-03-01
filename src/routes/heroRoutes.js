@@ -7,6 +7,6 @@ const router = express.Router();
 
 router.route('/').post(createHero);
 
-router.route('/').get(getHero).patch(updateHero);
+router.route('/:id').patch(updateHero).get(getHero);
 
 module.exports = router;

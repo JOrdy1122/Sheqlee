@@ -3,6 +3,7 @@ const sendEmail = require('../utils/email');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
 const Jobs = require('../models/jobModel');
+const ApiFeatures = require('../utils/apiFeatures');
 
 exports.toggleTagSubscription = async (req, res) => {
     try {
@@ -502,32 +503,45 @@ exports.unsubscribeFromCompany = async (req, res) => {
 
 exports.getAllFreelancers = async (req, res) => {
     try {
-        // Fetch all freelancers and populate referenced fields
-        const freelancers = await Freelancer.find()
-            .populate(
-                'subscribedCompanies',
-                'companyName domain'
-            )
-            .populate(
-                'subscribedCategories',
-                'title description'
-            )
-            .populate('subscribedTags', 'title icon')
-            .populate({
-                path: 'favorites', // 🔹 Populate favorite jobs
-                select: 'title company jobType salary', // 🔹 Select specific fields
+        let query = Freelancer.find().populate([
+            {
+                path: 'subscribedCompanies',
+                select: 'companyName domain',
+            },
+            {
+                path: 'subscribedCategories',
+                select: 'title description',
+            },
+            {
+                path: 'subscribedTags',
+                select: 'title icon',
+            },
+            {
+                path: 'favorites',
+                select: 'title company jobType salary',
                 populate: {
-                    path: 'company', // 🔹 Populate company inside jobs
+                    path: 'company',
                     select: 'companyName',
                 },
-            });
+            },
+        ]);
+
+        // Apply filtering, searching, sorting, and pagination
+        const apiFeatures = new ApiFeatures(
+            query,
+            req.query
+        )
+            .filter() // Apply dropdown filters
+            .search(['name', 'email']) // Search by name or email
+            .dateFilter('createdAt') // Filter by date
+            .paginate(); // Apply pagination (12 per page)
+
+        const freelancers = await apiFeatures.query;
 
         res.status(200).json({
             status: 'success',
             results: freelancers.length,
-            data: {
-                freelancers,
-            },
+            data: { freelancers },
         });
     } catch (err) {
         console.error('Error fetching freelancers:', err);

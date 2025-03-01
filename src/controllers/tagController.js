@@ -1,6 +1,7 @@
 const Tag = require('./../models/tagModel');
 const getNextId = require('../utils/getNextId');
 const Counter = require('../models/counterModel');
+const ApiFeatures = require('./../utils/apiFeatures');
 
 exports.toggleTagStatus = async (req, res) => {
     try {
@@ -37,12 +38,19 @@ exports.toggleTagStatus = async (req, res) => {
 
 exports.getPopularTags = async (req, res) => {
     try {
-        const popularTags = await Tag.aggregate([
-            { $match: { status: 'active' } }, // Step 1: Filter active tags
+        let popularTags = await Tag.aggregate([
+            { $match: { status: 'active' } },
 
+            // ✅ Ensure title is carried forward
+            {
+                $addFields: {
+                    tagTitle: '$title', // Store original title before lookups
+                },
+            },
+
+            // Get associated categories
             {
                 $lookup: {
-                    // Step 2: Join with categories
                     from: 'categories',
                     localField: '_id',
                     foreignField: 'tags',
@@ -52,15 +60,14 @@ exports.getPopularTags = async (req, res) => {
 
             {
                 $unwind: {
-                    // Step 3: Convert categories array into separate documents
                     path: '$categories',
                     preserveNullAndEmptyArrays: true,
                 },
             },
 
+            // Get associated jobs
             {
                 $lookup: {
-                    // Step 4: Find jobs that belong to these categories
                     from: 'jobs',
                     localField: 'categories._id',
                     foreignField: 'category',
@@ -68,9 +75,9 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
+            // Get freelancer subscribers
             {
                 $lookup: {
-                    // Step 5: Find freelancers who subscribed to these tags
                     from: 'freelancers',
                     localField: '_id',
                     foreignField: 'subscribedTags',
@@ -78,53 +85,69 @@ exports.getPopularTags = async (req, res) => {
                 },
             },
 
+            // Add computed fields
             {
                 $addFields: {
-                    // Step 6: Count jobs and subscribers
-                    jobCount: { $size: '$jobs' },
-                    subscriberCount: {
-                        $size: '$freelancerSubscribers',
+                    jobCount: {
+                        $size: { $ifNull: ['$jobs', []] },
                     },
-                },
-            },
-
-            {
-                $addFields: {
-                    // Step 7: Calculate popularity score
+                    subscriberCount: {
+                        $size: {
+                            $ifNull: [
+                                '$freelancerSubscribers',
+                                [],
+                            ],
+                        },
+                    },
                     popularityScore: {
                         $add: [
                             {
                                 $multiply: [
-                                    '$subscriberCount',
+                                    {
+                                        $size: '$freelancerSubscribers',
+                                    },
                                     2,
                                 ],
-                            }, // Subscribers * 2
-                            '$jobCount', // Jobs * 1
+                            },
+                            { $size: '$jobs' },
                         ],
                     },
                 },
             },
 
-            { $sort: { popularityScore: -1 } }, // Step 8: Sort by highest popularityScore
+            { $sort: { popularityScore: -1 } },
+            { $limit: 6 },
 
-            { $limit: 6 }, // Step 9: Return only the top 6 tags
-
+            // ✅ Ensure `title` is always included
             {
                 $project: {
-                    // Step 10: Select only the needed fields
                     _id: 1,
-                    name: 1,
+                    title: {
+                        $ifNull: ['$tagTitle', '$title'],
+                    }, // 👈 Use original title if tagTitle is missing
                     jobCount: 1,
                     subscriberCount: 1,
                 },
             },
         ]);
 
+        // 🔹 Fallback: If no popular tags, return any active ones
+        if (popularTags.length === 0) {
+            popularTags = await Tag.find({
+                status: 'active',
+            })
+                .limit(6)
+                .select('_id title');
+        }
+
+        console.log(popularTags); // ✅ Debugging
+
         res.status(200).json({
             success: true,
             tags: popularTags,
         });
     } catch (error) {
+        console.error('Error in getPopularTags:', error);
         res.status(500).json({
             success: false,
             message: 'Server error',
@@ -166,23 +189,35 @@ exports.createTag = async (req, res) => {
 
 exports.getAllTags = async (req, res) => {
     try {
-        const tags =
-            await Tag.find().populate('categories');
+        let query = Tag.find().populate('categories');
+
+        const apiFeatures = new ApiFeatures(
+            query,
+            req.query
+        )
+            .filter()
+            .search(['title']) // Adjust searchable fields
+            .paginate(); // 🔹 Uses default limit (7 per page)
+
+        const tags = await apiFeatures.query;
 
         res.status(200).json({
             status: 'success',
-            result: tags.length,
-            data: {
-                tags,
-            },
+            results: tags.length,
+            data: { tags },
         });
     } catch (err) {
-        console.log(
-            '💥 There was an error Fetching all Tags !',
+        console.error(
+            '💥 There was an error fetching all Tags!',
             err
         );
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error fetching tags.',
+        });
     }
 };
+
 exports.getTag = async (req, res) => {
     try {
         const tag = await Tag.findById(req.params.id);
@@ -196,7 +231,11 @@ exports.getTag = async (req, res) => {
             },
         });
     } catch (err) {
-        console.log('There was an Error getting a tag!');
+        console.error('Error getting tag:', err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error getting a tag.',
+        });
     }
 };
 
@@ -234,12 +273,22 @@ exports.updateTag = async (req, res) => {
 };
 
 exports.deleteTag = async (req, res) => {
-    const tag = await Tag.findByIdAndDelete(req.params.id);
+    try {
+        const tag = await Tag.findByIdAndDelete(
+            req.params.id
+        );
 
-    res.status(204).json({
-        status: 'success',
-        data: {
-            tag,
-        },
-    });
+        res.status(204).json({
+            status: 'success',
+            data: {
+                tag,
+            },
+        });
+    } catch (err) {
+        console.error('Error deleting tag:', err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error deleting tag.',
+        });
+    }
 };

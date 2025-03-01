@@ -2,6 +2,7 @@ const Job = require('../models/jobModel');
 const getNextId = require('../utils/getNextId');
 const moment = require('moment'); // Import moment.js
 const Counter = require('./../models/counterModel');
+const APIFeatures = require('./../utils/apiFeatures');
 
 const Freelancer = require('../models/freelancerModel');
 
@@ -173,12 +174,19 @@ exports.publishJob = async (req, res) => {
 
 exports.getAvailableJobs = async (req, res) => {
     try {
-        const jobs = await Job.find({
-            $or: [
-                { status: 'active', action: 'active' },
-                { status: 'inactive', action: 'active' },
-            ],
-        });
+        const features = new APIFeatures(
+            Job.find(),
+            req.query
+        )
+            .filter()
+            .search()
+            .sort()
+            .paginate(12);
+
+        const jobs = await features.query.populate(
+            'company',
+            'companyName logo'
+        );
 
         res.status(200).json({
             status: 'success',

@@ -1,4 +1,5 @@
 const Company = require('./../models/companyModel');
+const ApiFeatures = require('./../utils/apiFeatures');
 
 exports.toggleCompanyAction = async (req, res) => {
     try {
@@ -41,15 +42,22 @@ exports.toggleCompanyAction = async (req, res) => {
 // Get All Companies
 exports.getAllCompanies = async (req, res) => {
     try {
-        const companies =
-            await Company.find().populate('subscribers');
+        let query = Company.find().populate('subscribers');
+
+        const apiFeatures = new ApiFeatures(
+            query,
+            req.query
+        )
+            .filter()
+            .search(['companyName', 'domain']) // Adjust searchable fields
+            .paginate(); // 🔹 Uses default limit (7 per page)
+
+        const companies = await apiFeatures.query;
 
         res.status(200).json({
             status: 'success',
             results: companies.length,
-            data: {
-                companies,
-            },
+            data: { companies },
         });
     } catch (err) {
         console.error('Error fetching companies:', err);

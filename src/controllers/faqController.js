@@ -1,6 +1,7 @@
 const Faq = require('./../models/faqModel');
 const getNextId = require('../utils/getNextId');
 const Counter = require('../models/counterModel');
+const ApiFeatures = require('./../utils/apiFeatures');
 
 exports.createFaq = async (req, res) => {
     try {
@@ -39,23 +40,30 @@ exports.createFaq = async (req, res) => {
         });
     }
 };
-
 exports.getAllFaq = async (req, res) => {
     try {
-        // Fetch FAQs
-        const faqs = await Faq.find();
+        let query = Faq.find();
+
+        const apiFeatures = new ApiFeatures(
+            query,
+            req.query
+        )
+            .filter()
+            .search(['question', 'answer']) // Adjust searchable fields
+            .paginate(); // 🔹 Uses default limit (7 per page)
+
+        const faqs = await apiFeatures.query;
 
         res.status(200).json({
             status: 'success',
             results: faqs.length,
-            data: {
-                faqs,
-            },
+            data: { faqs },
         });
     } catch (err) {
+        console.error('💥 Error fetching FAQs:', err);
         res.status(500).json({
-            status: 'Fail',
-            message: `Error Fetching FAQs: ${err.message}`,
+            status: 'fail',
+            message: `Error fetching FAQs: ${err.message}`,
         });
     }
 };
