@@ -185,7 +185,7 @@ exports.getAvailableJobs = async (req, res) => {
 
         // Ensure populate is done after APIFeatures processing
         const jobs = await features.query
-            .populate('company', 'companyName -_id -__v') 
+            .populate('company', 'companyName') 
             .select('-__v');  
             
 
