@@ -512,7 +512,6 @@ exports.getAllFreelancers = async (req, res) => {
         )
             .filter() // Apply dropdown filters
             .search(['name', 'email']) // Search by name or email
-            .dateFilter('createdAt') // Filter by date
             .paginate(); // Apply pagination (12 per page)
 
         const freelancers = await apiFeatures.query.select('-__v');
