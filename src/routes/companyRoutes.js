@@ -57,6 +57,7 @@ router.patch('/:id/action', protect, toggleCompanyAction);
 
 router.patch(
     '/:id',
+    // protect,
     upload.single('logo'), // Upload logo
     processImage, // Process image (resize, optimize)
     updateCompany
