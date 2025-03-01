@@ -30,6 +30,7 @@ const freeLancerSchema = new mongoose.Schema({
     },
     password: {
         type: String,
+        select: false,
         minlength: [
             8,
             'Password must be at least 8 characters',

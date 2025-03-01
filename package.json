@@ -4,9 +4,8 @@
   "description": "Recruit affordable & skilled Ethiopian professionals.",
   "main": "app.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start:prod": "cross-env NODE_ENV=production nodemon  server.js",
-    "start": "nodemon server.js"
+    "start": "node server.js"
   },
   "author": "Yowhans Nigus",
   "license": "ISC",
