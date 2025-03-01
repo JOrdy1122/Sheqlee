@@ -503,28 +503,7 @@ exports.unsubscribeFromCompany = async (req, res) => {
 
 exports.getAllFreelancers = async (req, res) => {
     try {
-        let query = Freelancer.find().populate([
-            {
-                path: 'subscribedCompanies',
-                select: 'companyName domain',
-            },
-            {
-                path: 'subscribedCategories',
-                select: 'title description',
-            },
-            {
-                path: 'subscribedTags',
-                select: 'title icon',
-            },
-            {
-                path: 'favorites',
-                select: 'title company jobType salary',
-                populate: {
-                    path: 'company',
-                    select: 'companyName',
-                },
-            },
-        ]);
+        let query = Freelancer.find();
 
         // Apply filtering, searching, sorting, and pagination
         const apiFeatures = new ApiFeatures(

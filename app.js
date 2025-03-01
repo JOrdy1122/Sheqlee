@@ -33,6 +33,8 @@ const app = express();
 // Enable CORS before your routes
 app.use(cors());
 
+app.set('trust proxy', 1);
+
 app.use(passport.initialize());
 
 // Set security HTTP headers
