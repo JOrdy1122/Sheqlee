@@ -22,4 +22,4 @@ router
     .patch(updateTestimonial)
     .delete(deleteTestimonial);
 
-router;
+module.exports = router;
