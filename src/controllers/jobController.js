@@ -182,7 +182,7 @@ exports.getAvailableJobs = async (req, res) => {
             .search()
             .paginate(12);
 
-        const jobs = await features.query.populate('company');
+        const jobs = await features.query.populate('company','companyName');
 
         res.status(200).json({
             status: 'success',
