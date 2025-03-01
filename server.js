@@ -6,7 +6,7 @@ const logger = require('./src/utils/logger');
 dotenv.config({ path: './config.env' });
 const app = require('./app');
 
-const DB = process.env.DATABASE;
+const DB = process.env.DATABASE_ATLAS;
 
 mongoose
     .connect(DB, {
