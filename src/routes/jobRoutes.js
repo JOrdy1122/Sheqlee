@@ -11,6 +11,7 @@ const {
     getLatestJobs,
     getSubscribedJobs,
     publishJob,
+    toggleJobStatus
 } = jobController;
 
 const router = express.Router();
@@ -18,6 +19,8 @@ const router = express.Router();
 router.get('/latest-job-posts', getLatestJobs);
 
 router.get('/subscribed', protect, getSubscribedJobs);
+
+router.patch('/:id/toggle-status', protect, toggleJobStatus);
 
 router.patch('/:id/publish', protect, publishJob);
 

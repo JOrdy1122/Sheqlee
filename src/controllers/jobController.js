@@ -7,6 +7,38 @@ const Company = require('./../models/companyModel')
 
 const Freelancer = require('../models/freelancerModel');
 
+
+exports.toggleJobStatus = async (req, res) => {
+    try {
+        const { id } = req.params;
+
+        // Find the job
+        const job = await Job.findById(id);
+        if (!job) {
+            return res.status(404).json({
+                success: false,
+                message: 'Job not found',
+            });
+        }
+
+        // Toggle status: If active → inactive, if inactive → active
+        job.status = job.status === 'active' ? 'inactive' : 'active';
+        await job.save();
+
+        res.status(200).json({
+            success: true,
+            message: `Job status updated to ${job.status}`,
+            job,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: 'Server error',
+            error: error.message,
+        });
+    }
+};
+
 exports.getSubscribedJobs = async (req, res) => {
     try {
         // Get the authenticated freelancer
@@ -58,29 +90,41 @@ exports.getSubscribedJobs = async (req, res) => {
     }
 };
 
-// Fetch latest jobs
+const currencySymbols = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    Birr: 'Br',
+};
+
 exports.getLatestJobs = async (req, res) => {
     try {
-        const latestJobs = await Job.find({
-            status: 'active',
-        })
+        const latestJobs = await Job.find({ status: 'active' })
             .sort({ createdAt: -1 })
-            .limit(10).populate('company','companyName -_id').select('-__v');
+            .limit(10)
+            .populate('company', 'companyName -_id')
+            .select('-__v');
 
         if (latestJobs.length === 0) {
             return res.status(200).json({
                 success: true,
-                message:
-                    'No jobs available at the moment. Check back later!',
+                message: 'No jobs available at the moment. Check back later!',
                 jobs: [],
             });
         }
 
-        // Format timestamps
-        const formattedJobs = latestJobs.map((job) => ({
-            ...job.toObject(),
-            timeAgo: moment(job.createdAt).fromNow(),
-        }));
+        // Format timestamps & replace currency with symbol
+        const formattedJobs = latestJobs.map((job) => {
+            const jobObj = job.toObject();
+            return {
+                ...jobObj,
+                timeAgo: moment(job.createdAt).fromNow(),
+                salary: {
+                    ...jobObj.salary,
+                    currency: currencySymbols[jobObj.salary.currency] || jobObj.salary.currency, // Replace with symbol
+                },
+            };
+        });
 
         res.status(200).json({
             success: true,
@@ -94,6 +138,7 @@ exports.getLatestJobs = async (req, res) => {
         });
     }
 };
+
 
 exports.createJob = async (req, res) => {
     try {
@@ -225,22 +270,38 @@ exports.getjob = async (req, res) => {
     }
 };
 exports.updatejob = async (req, res) => {
-    const updatedjob = Job.findByIdAndUpdate(req.params.id);
-
-    res.status(200).json({
-        status: 'success',
-        data: {
-            updatedjob,
-        },
-    });
+    try {
+        const updatedjob = Job.findByIdAndUpdate(req.params.id);
+    
+        res.status(200).json({
+            status: 'success',
+            data: {
+                updatedjob,
+            },
+        });
+    } catch (err) {
+        console.log('Error updating job',err)
+        res.status(500).json({
+            status: 'Fail',
+            message: 'Error updating job'
+        })
+    }
 };
 exports.deletejob = async (req, res) => {
-    const job = Job.findByIdAndDelete(req.params.id);
-
-    res.status(204).json({
-        status: 'success',
-        data: {
-            job,
-        },
-    });
+    try {
+        const job = Job.findByIdAndDelete(req.params.id);
+    
+        res.status(204).json({
+            status: 'success',
+            data: {
+                job,
+            },
+        });
+    } catch(err){
+        console.log('Error Deleting job',err),
+        res.status(500).json({
+            status: 'Fail',
+            message: 'Error deleting job'
+        })
+    }
 };
