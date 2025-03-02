@@ -114,7 +114,7 @@ exports.createJob = async (req, res) => {
         }
 
         req.body.job_id = nextJobId;
-        req.body.status = status;
+       
 
         const newJob = await Job.create(req.body);
 

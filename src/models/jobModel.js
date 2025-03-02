@@ -5,6 +5,7 @@ const jobSchema = new mongoose.Schema({
     job_id: {
         type: String,
         required: true,
+        unique: true
     },
     title: {
         type: String,
