@@ -1,5 +1,6 @@
 const express = require('express');
 const deletionRequestController = require('./../controllers/deletionRequestController');
+const { protect } = require('./../middlewares/auth'); 
 
 const {
     createDeletionRequest,
@@ -10,12 +11,12 @@ const {
 const router = express.Router();
 
 // User submits a deletion request
-router.post('/', createDeletionRequest);
+router.post('/', protect,createDeletionRequest);
 
 // Admin fetches all pending deletion requests
-router.get('/', getAllDeletionRequests);
+router.get('/', protect,getAllDeletionRequests);
 
 
-router.patch('/:id', updateDeletionRequest);
+router.patch('/:id', protect , updateDeletionRequest);
 
 module.exports = router;

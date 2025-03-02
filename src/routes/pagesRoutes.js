@@ -1,21 +1,22 @@
 const express = require('express');
 const pageController = require('../controllers/pageController');
+const { protect } = require('./../middlewares/auth'); 
 
+const {getAllPages,getPage,updatePage,deletePage} = pageController;
 const router = express.Router();
 
-// Create a new page
-router.post('/', pageController.createPage);
 
-// Get all pages (with filtering, searching, and pagination)
-router.get('/', pageController.getAllPages);
+router.post('/', createPage);
 
-// Get a single page by ID
-router.get('/:id', pageController.getPage);
+// Get all pages 
+router.get('/', getAllPages);
 
-// Update a page by ID
-router.put('/:id', pageController.updatePage);
+router.get('/:id', getPage);
 
-// Delete a page by ID
-router.delete('/:id', pageController.deletePage);
+
+router.put('/:id', protect,updatePage);
+
+
+router.delete('/:id',protect, deletePage);
 
 module.exports = router;

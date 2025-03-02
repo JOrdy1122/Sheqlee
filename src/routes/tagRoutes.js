@@ -22,12 +22,12 @@ router.patch(
     toggleTagStatus
 );
 
-router.route('/').get(getAllTags).post(createTag);
+router.route('/').get(getAllTags).post(protect,createTag);
 
 router
     .route('/:id')
     .get(getTag)
-    .patch(updateTag)
-    .delete(deleteTag);
+    .patch(protect,updateTag)
+    .delete(protect,deleteTag);
 
 module.exports = router;

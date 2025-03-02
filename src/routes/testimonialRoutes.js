@@ -1,5 +1,6 @@
 const express = require('express');
 const testimonialController = require('./../controllers/testimonialController');
+const { protect } = require('./../middlewares/auth'); 
 
 const {
     createTestimonial,
@@ -14,12 +15,12 @@ const router = express.Router();
 router
     .route('/')
     .get(getAllTestimonials)
-    .post(createTestimonial); // used only during development for storing the first data
+    .post(protect,createTestimonial); // used only during development for storing the first data
 
 router
     .route('/:id')
     .get(getTestimonial)
-    .patch(updateTestimonial)
-    .delete(deleteTestimonial);
+    .patch(protect,updateTestimonial)
+    .delete(protect,deleteTestimonial);
 
 module.exports = router;

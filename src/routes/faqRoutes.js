@@ -1,5 +1,6 @@
 const express = require('express');
 const faqController = require('./../controllers/faqController');
+const { protect } = require('./../middlewares/auth'); 
 
 const {
     createFaq,
@@ -11,12 +12,12 @@ const {
 
 const router = express.Router();
 
-router.route('/').get(getAllFaq).post(createFaq);
+router.route('/').get(getAllFaq).post(protect,createFaq);
 
 router
     .route('/:id')
     .get(getFaq)
-    .patch(updateFaq)
-    .delete(deleteFaq);
+    .patch(protect,updateFaq)
+    .delete(protect,deleteFaq);
 
 module.exports = router;

@@ -81,9 +81,10 @@ router.post('/forgotPassword', forgotPassword);
 router.patch('/resetPassword', resetPassword);
 
 // for subscription
-router.post('/subscribeToCompany', subscribeToCompany);
+router.post('/subscribeToCompany',protect, subscribeToCompany);
 router.delete(
     '/unsubscribeFromCompany',
+    protect,
     unsubscribeFromCompany
 );
 
@@ -104,12 +105,13 @@ router.route('/').get(getAllFreelancers);
 router.post('/deletionRequest', protect, requestDeletion);
 
 // deletion of freelancer by the admin
-router.delete('/:id', deleteFreelancer);
+router.delete('/:id', protect,deleteFreelancer);
 
 router.route('/:id').get(getFreelancer);
 
 router.patch(
     '/:id',
+    protect,
     upload.fields([
         { name: 'image', maxCount: 1 }, // Profile picture
         { name: 'cvFile', maxCount: 1 }, // CV file

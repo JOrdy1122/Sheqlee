@@ -26,12 +26,12 @@ router.patch(
 router
     .route('/')
     .get(getAllCategories)
-    .post(createCategory);
+    .post(protect,createCategory);
 
 router
     .route('/:id')
     .get(getCategory)
-    .patch(updateCategory)
-    .delete(deleteCategory);
+    .patch(protect,updateCategory)
+    .delete(protect,deleteCategory);
 
 module.exports = router;

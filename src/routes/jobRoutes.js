@@ -1,6 +1,6 @@
 const express = require('express');
 const jobController = require('./../controllers/jobController');
-const { protect } = require('./../middlewares/auth'); // Import the middleware
+const { protect } = require('./../middlewares/auth'); 
 
 const {
     getAvailableJobs,
