@@ -21,12 +21,12 @@ router.get('/subscribed', protect, getSubscribedJobs);
 
 router.patch('/:id/publish', protect, publishJob);
 
-router.route('/').get(getAvailableJobs).post(createJob);
+router.route('/').get(getAvailableJobs).post(protect,createJob);
 
 router
     .route('/:id')
     .get(getjob)
-    .patch(updatejob)
-    .delete(deletejob);
+    .patch(protect,updatejob)
+    .delete(protect,deletejob);
 
 module.exports = router;
