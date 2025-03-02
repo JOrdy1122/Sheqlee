@@ -38,7 +38,6 @@ const freeLancerSchema = new mongoose.Schema({
         required: function () {
             return !this.isOAuth; // Required only if NOT OAuth user
         },
-        select: false, // Hide password in queries
     },
     passwordConfirm: {
         type: String,

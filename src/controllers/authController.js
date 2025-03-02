@@ -122,12 +122,6 @@ exports.login = async (req, res) => {
                 message: 'User not found.',
             });
         }
-
-        console.log(
-            'Found user in UserIndex:',
-            userIndex
-        );
-
         // Step 2: Determine the correct model name
         const modelName =
             userIndex.role === 'Freelancer'
@@ -151,11 +145,6 @@ exports.login = async (req, res) => {
             .model(modelName)
             .findById(userIndex.userId)
             .select('+password'); // Force Mongoose to return the password
-
-        console.log(
-            ' Retrieved userDetails:',
-            userDetails
-        );
 
         if (!userDetails) {
             console.log(
@@ -190,17 +179,6 @@ exports.login = async (req, res) => {
             await userDetails.save();
         }
 
-        console.log(
-            'Full userDetails object:',
-            userDetails
-        );
-
-        console.log(
-            'Password in database:',
-            userDetails?.password
-        );
-        console.log('Password from request:', password);
-
         // Step 4: Validate the password
         console.log('Checking password...');
         const isPasswordCorrect = await bcrypt.compare(
@@ -232,6 +210,7 @@ exports.login = async (req, res) => {
         res.status(200).json({
             status: 'success',
             message: 'Logged in successfully!',
+            role: userIndex.role,
             token,
         });
     } catch (err) {
@@ -349,10 +328,7 @@ exports.signupCompany = async (req, res) => {
         // Respond with success
         res.status(201).json({
             status: 'success',
-            token,
-            data: {
-                company: newCompany,
-            },
+            token
         });
     } catch (err) {
         console.error('Error during company signup:', err);
@@ -466,10 +442,7 @@ exports.signupFreelancer = async (req, res) => {
         // Respond with success
         res.status(201).json({
             status: 'success',
-            token,
-            data: {
-                freelancer: newFreelancer,
-            },
+            token
         });
     } catch (err) {
         console.error(

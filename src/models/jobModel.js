@@ -64,7 +64,7 @@ const jobSchema = new mongoose.Schema({
         rate: {
             type: String,
             required: [true, 'Salary rate is required'],
-            enum: ['hour', 'day', 'week', 'month', 'year'], 
+            enum: ['hr', 'wk', 'mo'], 
         },
     },
     shortDescription: {
