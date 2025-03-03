@@ -217,26 +217,47 @@ exports.publishJob = async (req, res) => {
         });
     }
 };
-
 exports.getAvailableJobs = async (req, res) => {
     try {
         let query = Job.find();
 
-        // Apply filtering, searching, and pagination using APIFeatures
+        // Apply filtering and searching using APIFeatures
         const features = new APIFeatures(query, req.query)
             .filter()
-            .search()
-            .paginate(12);
+            .search();
 
-        // Ensure populate is done after APIFeatures processing
+        // If no pagination is requested (no 'page' or 'limit' query params), return all jobs
+        if (!req.query.page && !req.query.limit) {
+            const jobs = await features.query
+                .populate('company', 'companyName')
+                .select('-__v');
+
+            return res.status(200).json({
+                status: 'success',
+                results: jobs.length,
+                data: { jobs },
+            });
+        }
+
+        // Apply pagination if 'page' or 'limit' is provided in the query
+        features.paginate(12); // Default limit is 12 if no limit is provided in query
+
         const jobs = await features.query
-            .populate('company', 'companyName') 
-            .select('-__v');  
-            
+            .populate('company', 'companyName')
+            .select('-__v');
+
+        // Count total jobs to calculate totalPages
+        const totalItems = await Job.countDocuments(); // Count all jobs
+
+        // Calculate totalPages
+        const totalPages = Math.ceil(totalItems / (req.query.limit || 12));
 
         res.status(200).json({
             status: 'success',
             results: jobs.length,
+            totalPages: totalPages,
+            currentPage: req.query.page || 1, // Default to page 1 if not provided
+            totalItems: totalItems,
             data: { jobs },
         });
     } catch (err) {
@@ -247,6 +268,7 @@ exports.getAvailableJobs = async (req, res) => {
         });
     }
 };
+
 
 
 exports.getjob = async (req, res) => {
