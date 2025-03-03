@@ -90,7 +90,7 @@ const jobSchema = new mongoose.Schema({
         trim: true,
     },
     skills: {
-         type: [mongoose.Schema.Types.ObjectId],
+        type: [mongoose.Schema.Types.ObjectId],
         ref: 'Tag',
     },
     applyLink: {
