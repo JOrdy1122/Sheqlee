@@ -92,6 +92,7 @@ const jobSchema = new mongoose.Schema({
     skills: {
         type: [mongoose.Schema.Types.ObjectId],
         ref: 'Tag',
+        required: [true, 'skills are required!']
     },
     applyLink: {
         type: String,
