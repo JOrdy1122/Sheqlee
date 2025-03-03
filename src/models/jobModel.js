@@ -90,14 +90,8 @@ const jobSchema = new mongoose.Schema({
         trim: true,
     },
     skills: {
-        type: [String], 
-        required: [true, 'Skills are required'],
-        validate: {
-            validator: function (v) {
-                return v.length > 0; 
-            },
-            message: 'At least one skill is required',
-        },
+         type: [mongoose.Schema.Types.ObjectId],
+        ref: 'Tag',
     },
     applyLink: {
         type: String,
