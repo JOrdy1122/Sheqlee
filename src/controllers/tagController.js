@@ -187,30 +187,114 @@ exports.createTag = async (req, res) => {
     }
 };
 
+// exports.getAllTags = async (req, res) => {
+//     try {
+//         let query = Tag.find().populate('categories');
+
+//         const apiFeatures = new ApiFeatures(
+//             query,
+//             req.query
+//         )
+//             .filter()
+//             .search(['title']) 
+//             .paginate(); // 
+
+//         const tags = await apiFeatures.query;
+
+//         res.status(200).json({
+//             status: 'success',
+//             results: tags.length,
+//             data: { tags },
+//         });
+//     } catch (err) {
+//         console.error(
+//             '💥 There was an error fetching all Tags!',
+//             err
+//         );
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error fetching tags.',
+//         });
+//     }
+// };
+// exports.getAllTags = async (req, res) => {
+//     try {
+//         let query = Tag.find().populate('categories');
+
+//         // Handle filter and search
+//         const apiFeatures = new ApiFeatures(query, req.query)
+//             .filter()
+//             .search(['title']);
+
+//         // If no pagination is requested, show all tags
+//         if (!req.query.page && !req.query.limit) {
+//             const tags = await apiFeatures.query; // Get all tags
+//             return res.status(200).json({
+//                 status: 'success',
+//                 results: tags.length,
+//                 data: { tags },
+//             });
+//         }
+
+//         // If pagination is requested (page and/or limit are in the query params)
+//         apiFeatures.paginate(); // Apply pagination
+
+//         const tags = await apiFeatures.query;
+
+//         res.status(200).json({
+//             status: 'success',
+//             results: tags.length,
+//             data: { tags },
+//         });
+//     } catch (err) {
+//         console.error('💥 There was an error fetching all Tags!', err);
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error fetching tags.',
+//         });
+//     }
+// };
+
 exports.getAllTags = async (req, res) => {
     try {
         let query = Tag.find().populate('categories');
 
-        const apiFeatures = new ApiFeatures(
-            query,
-            req.query
-        )
+        // Handle filter and search
+        const apiFeatures = new ApiFeatures(query, req.query)
             .filter()
-            .search(['title']) 
-            .paginate(); // 
+            .search(['title']);
+
+        // If no pagination is requested, show all tags
+        if (!req.query.page && !req.query.limit) {
+            const tags = await apiFeatures.query; // Get all tags
+            return res.status(200).json({
+                status: 'success',
+                results: tags.length,
+                data: { tags },
+            });
+        }
+
+        // If pagination is requested (page and/or limit are in the query params)
+        apiFeatures.paginate(); // Apply pagination
 
         const tags = await apiFeatures.query;
+
+        // Count total items (tags) to calculate totalPages
+        const totalItems = await Tag.countDocuments(); // Count all tags
+
+        // Calculate totalPages
+        const totalPages = Math.ceil(totalItems / (req.query.limit || 10));
 
         res.status(200).json({
             status: 'success',
             results: tags.length,
+            totalPages: totalPages,
+            currentPage: req.query.page || 1, // Default to page 1 if not provided
+            totalItems: totalItems,
             data: { tags },
         });
     } catch (err) {
-        console.error(
-            '💥 There was an error fetching all Tags!',
-            err
-        );
+        console.error('💥 There was an error fetching all Tags!', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error fetching tags.',

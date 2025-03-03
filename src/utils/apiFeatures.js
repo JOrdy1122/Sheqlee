@@ -62,15 +62,7 @@ class APIFeatures {
     //     return this;
     // }
 
-    paginate(defaultLimit = 10) {
-        const page = Number(this.queryString.page) || 1;
-        const limit =
-            Number(this.queryString.limit) || defaultLimit; // Use provided limit or default
-        const skip = (page - 1) * limit;
-
-        this.query = this.query.skip(skip).limit(limit);
-        return this;
-    }
+    
     paginate(defaultLimit = 7) {
         const page = Number(this.queryString.page) || 1;
         const limit =

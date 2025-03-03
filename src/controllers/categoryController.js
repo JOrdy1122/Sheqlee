@@ -93,8 +93,8 @@ exports.getAllCategories = async (req, res) => {
             req.query
         )
             .filter()
-            .search(['title']) 
-            .paginate(); 
+            .search(['title']) ;
+             
 
         const categories = await apiFeatures.query;
 
