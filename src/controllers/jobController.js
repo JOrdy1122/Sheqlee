@@ -271,7 +271,89 @@ exports.publishJob = async (req, res) => {
 //         });
 //     }
 // };
+exports.getAvailableJobs = async (req, res) => {
+    try {
+        let query = Job.find();
 
+        if (req.query.search) {
+            const searchRegex = new RegExp(
+                req.query.search,
+                'i'
+            ); // Case-insensitive search
+            console.log(
+                '🔍 Search Query:',
+                req.query.search
+            );
+
+            // 🔍 Find matching categories based on `title`
+            const categories = await Category.find({
+                title: searchRegex,
+            }).select('_id');
+            const categoryIds = categories.map(
+                (cat) => cat._id
+            ); // Extract ObjectIds
+
+            console.log(
+                '🔍 Matched Categories:',
+                categoryIds
+            );
+
+            // 🔍 Find matching tags based on `title`
+            const tags = await Tag.find({
+                title: searchRegex,
+            }).select('_id');
+            const tagIds = tags.map((tag) => tag._id);
+
+            console.log('🔍 Matched Tags:', tagIds);
+
+            if (
+                categoryIds.length === 0 &&
+                tagIds.length === 0
+            ) {
+                console.log(
+                    '⚠️ No matching categories or tags found for:',
+                    req.query.search
+                );
+            }
+
+            // Update query to filter jobs by matching category or tag
+            query = query.or([
+                { category: { $in: categoryIds } }, // Category must match
+                { skills: { $in: tagIds } }, // At least one tag must match
+            ]);
+        }
+
+        console.log(
+            '🛠️ Final MongoDB Query:',
+            JSON.stringify(query.getFilter(), null, 2)
+        );
+
+        // Apply filtering and pagination
+        const features = new APIFeatures(query, req.query)
+            .filter()
+            .paginate(12);
+
+        const jobs = await features.query
+            .populate('category', 'title')
+            .populate('skills', 'title')
+            .populate('company', 'companyName')
+            .select('-__v');
+
+        console.log('✅ Jobs Found:', jobs.length);
+
+        res.status(200).json({
+            status: 'success',
+            results: jobs.length,
+            data: { jobs },
+        });
+    } catch (err) {
+        console.error('❌ Error fetching jobs:', err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error fetching available jobs',
+        });
+    }
+};
 
 exports.getjob = async (req, res) => {
     try {
