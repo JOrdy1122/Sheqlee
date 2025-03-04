@@ -4,6 +4,8 @@ const moment = require('moment'); // Import moment.js
 const Counter = require('./../models/counterModel');
 const APIFeatures = require('./../utils/apiFeatures');
 const Company = require('./../models/companyModel')
+const Category = require('../models/categoryModel'); 
+const Tag = require('../models/tagModel'); 
 
 const Freelancer = require('../models/freelancerModel');
 
