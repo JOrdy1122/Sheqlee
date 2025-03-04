@@ -306,10 +306,11 @@ exports.getAvailableJobs = async (req, res) => {
         const features = new APIFeatures(query, req.query).filter().paginate(12);
 
         const jobs = await features.query
-            .populate('category', 'title') // Populate category with title
-            .populate('tags', 'title') // Populate tags with title
+            .populate('category', 'title') // ✅ Category title
+            .populate('skills', 'title')   // ✅ Change 'tags' → 'skills'
             .populate('company', 'companyName')
             .select('-__v');
+
 
         res.status(200).json({
             status: 'success',
