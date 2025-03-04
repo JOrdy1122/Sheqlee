@@ -270,67 +270,38 @@ exports.publishJob = async (req, res) => {
 //         });
 //     }
 // };
-
 exports.getAvailableJobs = async (req, res) => {
     try {
         let query = Job.find();
 
-        // Apply filtering and searching using APIFeatures
-        const features = new APIFeatures(query, req.query)
-            .filter()
-            .search();
-
-        // Handling search for tags and categories
         if (req.query.search) {
-            const searchQuery = new RegExp(req.query.search, 'i'); // Case-insensitive regex
+            const searchRegex = new RegExp(req.query.search, 'i'); // Case-insensitive search
 
-            // Find matching categories by name
-            const matchingCategories = await Category.find({ name: searchQuery }).select('_id');
+            // Find matching categories
+            const categories = await Category.find({ name: searchRegex }).select('_id');
+            const categoryIds = categories.map(cat => cat._id); // Extract ObjectIds
 
-            // Extract category IDs
-            const categoryIds = matchingCategories.map(cat => cat._id);
+            // Find matching tags
+            const tags = await Tag.find({ name: searchRegex }).select('_id');
+            const tagIds = tags.map(tag => tag._id);
 
-            // Apply search filter to jobs
-            query = query.find({
-                $or: [
-                    { tags: searchQuery }, // Matches tags array
-                    { category: { $in: categoryIds } } // Matches category ObjectId
-                ]
-            });
+            // Update query to filter by matching category or tag
+            query = query.or([
+                { category: { $in: categoryIds } },
+                { tags: { $in: tagIds } }, // Assuming `tags` is stored as an array of ObjectIds
+            ]);
         }
 
-        // If no pagination is requested, return all jobs
-        if (!req.query.page && !req.query.limit) {
-            const jobs = await query
-                .populate('company', 'companyName')
-                .select('-__v');
+        // Apply APIFeatures
+        const features = new APIFeatures(query, req.query).filter().paginate(12);
 
-            return res.status(200).json({
-                status: 'success',
-                results: jobs.length,
-                data: { jobs },
-            });
-        }
-
-        // Apply pagination if 'page' or 'limit' is provided in the query
-        features.paginate(12); // Default limit is 12
-
-        const jobs = await query
+        const jobs = await features.query
             .populate('company', 'companyName')
             .select('-__v');
-
-        // Count total jobs to calculate totalPages
-        const totalItems = await Job.countDocuments(query.getFilter()); // Count filtered jobs
-
-        // Calculate totalPages
-        const totalPages = Math.ceil(totalItems / (req.query.limit || 12));
 
         res.status(200).json({
             status: 'success',
             results: jobs.length,
-            totalPages: totalPages,
-            currentPage: req.query.page || 1, // Default to page 1
-            totalItems: totalItems,
             data: { jobs },
         });
     } catch (err) {
@@ -341,6 +312,7 @@ exports.getAvailableJobs = async (req, res) => {
         });
     }
 };
+
 
 
 exports.getjob = async (req, res) => {
