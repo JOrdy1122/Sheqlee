@@ -7,6 +7,7 @@ const Company = require('./../models/companyModel')
 const Category = require('../models/categoryModel'); 
 const Tag = require('../models/tagModel'); 
 
+
 const Freelancer = require('../models/freelancerModel');
 
 
@@ -270,6 +271,7 @@ exports.publishJob = async (req, res) => {
 //         });
 //     }
 // };
+
 exports.getAvailableJobs = async (req, res) => {
     try {
         let query = Job.find();
@@ -277,25 +279,35 @@ exports.getAvailableJobs = async (req, res) => {
         if (req.query.search) {
             const searchRegex = new RegExp(req.query.search, 'i'); // Case-insensitive search
 
-            // Find matching categories
-            const categories = await Category.find({ name: searchRegex }).select('_id');
+            // 🔍 Find matching categories based on `title`
+            const categories = await Category.find({ title: searchRegex }).select('_id');
             const categoryIds = categories.map(cat => cat._id); // Extract ObjectIds
 
-            // Find matching tags
-            const tags = await Tag.find({ name: searchRegex }).select('_id');
+            console.log('🔍 Matched Categories:', categories);
+
+            // 🔍 Find matching tags based on `title`
+            const tags = await Tag.find({ title: searchRegex }).select('_id');
             const tagIds = tags.map(tag => tag._id);
 
-            // Update query to filter by matching category or tag
+            console.log('🔍 Matched Tags:', tags);
+
+            if (categoryIds.length === 0 && tagIds.length === 0) {
+                console.log('⚠️ No matching categories or tags found for:', req.query.search);
+            }
+
+            // Update query to filter jobs by matching category or tag
             query = query.or([
-                { category: { $in: categoryIds } },
-                { tags: { $in: tagIds } }, // Assuming `tags` is stored as an array of ObjectIds
+                { category: { $in: categoryIds } }, // Category must match
+                { tags: { $in: tagIds } }, // At least one tag must match
             ]);
         }
 
-        // Apply APIFeatures
+        // Apply filtering and pagination
         const features = new APIFeatures(query, req.query).filter().paginate(12);
 
         const jobs = await features.query
+            .populate('category', 'title') // Populate category with title
+            .populate('tags', 'title') // Populate tags with title
             .populate('company', 'companyName')
             .select('-__v');
 
@@ -305,7 +317,7 @@ exports.getAvailableJobs = async (req, res) => {
             data: { jobs },
         });
     } catch (err) {
-        console.error('Error fetching jobs:', err);
+        console.error('❌ Error fetching jobs:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error fetching available jobs',
