@@ -217,6 +217,58 @@ exports.publishJob = async (req, res) => {
         });
     }
 };
+// exports.getAvailableJobs = async (req, res) => {
+//     try {
+//         let query = Job.find();
+
+//         // Apply filtering and searching using APIFeatures
+//         const features = new APIFeatures(query, req.query)
+//             .filter()
+//             .search();
+
+//         // If no pagination is requested (no 'page' or 'limit' query params), return all jobs
+//         if (!req.query.page && !req.query.limit) {
+//             const jobs = await features.query
+//                 .populate('company', 'companyName')
+//                 .select('-__v');
+
+//             return res.status(200).json({
+//                 status: 'success',
+//                 results: jobs.length,
+//                 data: { jobs },
+//             });
+//         }
+
+//         // Apply pagination if 'page' or 'limit' is provided in the query
+//         features.paginate(12); // Default limit is 12 if no limit is provided in query
+
+//         const jobs = await features.query
+//             .populate('company', 'companyName')
+//             .select('-__v');
+
+//         // Count total jobs to calculate totalPages
+//         const totalItems = await Job.countDocuments(); // Count all jobs
+
+//         // Calculate totalPages
+//         const totalPages = Math.ceil(totalItems / (req.query.limit || 12));
+
+//         res.status(200).json({
+//             status: 'success',
+//             results: jobs.length,
+//             totalPages: totalPages,
+//             currentPage: req.query.page || 1, // Default to page 1 if not provided
+//             totalItems: totalItems,
+//             data: { jobs },
+//         });
+//     } catch (err) {
+//         console.error('Error fetching jobs:', err);
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error fetching available jobs',
+//         });
+//     }
+// };
+
 exports.getAvailableJobs = async (req, res) => {
     try {
         let query = Job.find();
@@ -226,9 +278,28 @@ exports.getAvailableJobs = async (req, res) => {
             .filter()
             .search();
 
-        // If no pagination is requested (no 'page' or 'limit' query params), return all jobs
+        // Handling search for tags and categories
+        if (req.query.search) {
+            const searchQuery = new RegExp(req.query.search, 'i'); // Case-insensitive regex
+
+            // Find matching categories by name
+            const matchingCategories = await Category.find({ name: searchQuery }).select('_id');
+
+            // Extract category IDs
+            const categoryIds = matchingCategories.map(cat => cat._id);
+
+            // Apply search filter to jobs
+            query = query.find({
+                $or: [
+                    { tags: searchQuery }, // Matches tags array
+                    { category: { $in: categoryIds } } // Matches category ObjectId
+                ]
+            });
+        }
+
+        // If no pagination is requested, return all jobs
         if (!req.query.page && !req.query.limit) {
-            const jobs = await features.query
+            const jobs = await query
                 .populate('company', 'companyName')
                 .select('-__v');
 
@@ -240,14 +311,14 @@ exports.getAvailableJobs = async (req, res) => {
         }
 
         // Apply pagination if 'page' or 'limit' is provided in the query
-        features.paginate(12); // Default limit is 12 if no limit is provided in query
+        features.paginate(12); // Default limit is 12
 
-        const jobs = await features.query
+        const jobs = await query
             .populate('company', 'companyName')
             .select('-__v');
 
         // Count total jobs to calculate totalPages
-        const totalItems = await Job.countDocuments(); // Count all jobs
+        const totalItems = await Job.countDocuments(query.getFilter()); // Count filtered jobs
 
         // Calculate totalPages
         const totalPages = Math.ceil(totalItems / (req.query.limit || 12));
@@ -256,7 +327,7 @@ exports.getAvailableJobs = async (req, res) => {
             status: 'success',
             results: jobs.length,
             totalPages: totalPages,
-            currentPage: req.query.page || 1, // Default to page 1 if not provided
+            currentPage: req.query.page || 1, // Default to page 1
             totalItems: totalItems,
             data: { jobs },
         });
@@ -268,7 +339,6 @@ exports.getAvailableJobs = async (req, res) => {
         });
     }
 };
-
 
 
 exports.getjob = async (req, res) => {
