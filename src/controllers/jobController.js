@@ -272,61 +272,176 @@ exports.publishJob = async (req, res) => {
 //     }
 // };
 
-exports.getAvailableJobs = async (req, res) => {
+// exports.getAvailableJobs = async (req, res) => {
+//     try {
+//         let query = Job.find();
+
+//         if (req.query.search) {
+//             const searchRegex = new RegExp(req.query.search, 'i'); // Case-insensitive search
+
+//             // 🔍 Find matching categories based on `title`
+//             const categories = await Category.find({ title: searchRegex }).select('_id');
+//             const categoryIds = categories.map(cat => cat._id); // Extract ObjectIds
+
+//             console.log('🔍 Matched Categories:', categories);
+
+//             // 🔍 Find matching tags based on `title`
+//             const tags = await Tag.find({ title: searchRegex }).select('_id');
+//             const tagIds = tags.map(tag => tag._id);
+
+//             console.log('🔍 Matched Tags:', tags);
+
+//             if (categoryIds.length === 0 && tagIds.length === 0) {
+//                 console.log('⚠️ No matching categories or tags found for:', req.query.search);
+//             }
+
+//             // Update query to filter jobs by matching category or tag
+//             query = query.or([
+//                 { category: { $in: categoryIds } }, // Category must match
+//                 { tags: { $in: tagIds } }, // At least one tag must match
+//             ]);
+//         }
+
+//         // Apply filtering and pagination
+//         const features = new APIFeatures(query, req.query).filter().paginate(12);
+
+//         const jobs = await features.query
+//             .populate('category', 'title') // ✅ Category title
+//             .populate('skills', 'title')   // ✅ Change 'tags' → 'skills'
+//             .populate('company', 'companyName')
+//             .select('-__v');
+
+
+//         res.status(200).json({
+//             status: 'success',
+//             results: jobs.length,
+//             data: { jobs },
+//         });
+//     } catch (err) {
+//         console.error('❌ Error fetching jobs:', err);
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error fetching available jobs',
+//         });
+//     }
+// };
+
+
+exports.login = async (req, res) => {
     try {
-        let query = Job.find();
+        const { email, password } = req.body;
+        console.log('Checking email:', email);
 
-        if (req.query.search) {
-            const searchRegex = new RegExp(req.query.search, 'i'); // Case-insensitive search
+        // Step 1: Find the user in the UserIndex
+        const userIndex = await UserIndex.findOne({
+            email: email.toLowerCase(),
+        });
 
-            // 🔍 Find matching categories based on `title`
-            const categories = await Category.find({ title: searchRegex }).select('_id');
-            const categoryIds = categories.map(cat => cat._id); // Extract ObjectIds
-
-            console.log('🔍 Matched Categories:', categories);
-
-            // 🔍 Find matching tags based on `title`
-            const tags = await Tag.find({ title: searchRegex }).select('_id');
-            const tagIds = tags.map(tag => tag._id);
-
-            console.log('🔍 Matched Tags:', tags);
-
-            if (categoryIds.length === 0 && tagIds.length === 0) {
-                console.log('⚠️ No matching categories or tags found for:', req.query.search);
-            }
-
-            // Update query to filter jobs by matching category or tag
-            query = query.or([
-                { category: { $in: categoryIds } }, // Category must match
-                { tags: { $in: tagIds } }, // At least one tag must match
-            ]);
+        if (!userIndex) {
+            console.log('No user found in UserIndex!');
+            return res.status(404).json({
+                status: 'fail',
+                message: 'User not found.',
+            });
         }
 
-        // Apply filtering and pagination
-        const features = new APIFeatures(query, req.query).filter().paginate(12);
+        // Step 2: Determine the correct model name
+        const modelName =
+            userIndex.role === 'Freelancer'
+                ? 'Freelancer'
+                : userIndex.role === 'Company'
+                ? 'Company'
+                : userIndex.role === 'User'
+                ? 'User'
+                : null;
 
-        const jobs = await features.query
-            .populate('category', 'title') // ✅ Category title
-            .populate('skills', 'title')   // ✅ Change 'tags' → 'skills'
-            .populate('company', 'companyName')
-            .select('-__v');
+        if (!modelName) {
+            console.log('Invalid user role!');
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Invalid user role.',
+            });
+        }
 
+        // Step 3: Populate user details using correct model
+        const userDetails = await mongoose
+            .model(modelName)
+            .findById(userIndex.userId)
+            .select('+password'); // Force Mongoose to return the password
 
+        if (!userDetails) {
+            console.log('User details missing in database!');
+            return res.status(404).json({
+                status: 'fail',
+                message: 'User details not found.',
+            });
+        }
+
+        // Step 4: Check if action is inactive → Block login
+        if (userDetails.action === 'inactive') {
+            console.log('Login blocked: User is inactive!');
+            return res.status(403).json({
+                status: 'fail',
+                message: 'Your account is inactive. Contact support for assistance.',
+            });
+        }
+
+        // Check for pending deletion request
+        const deletionRequest = await DeletionRequest.findOne({
+            account_Id: userDetails._id,
+        });
+        if (deletionRequest) {
+            await DeletionRequest.deleteOne({
+                account_Id: userDetails._id,
+            }); // Cancel deletion
+            userDetails.status = 'active'; // Restore status
+            await userDetails.save();
+        }
+
+        // Step 5: Validate the password
+        console.log('Checking password...');
+        const isPasswordCorrect = await bcrypt.compare(
+            password,
+            userDetails.password
+        );
+
+        if (!isPasswordCorrect) {
+            console.log('Incorrect password attempt!');
+            return res.status(401).json({
+                status: 'fail',
+                message: 'Incorrect password.',
+            });
+        }
+
+        // Step 6: Generate JWT token
+        console.log('Generating token...');
+        const token = jwt.sign(
+            {
+                userId: userDetails._id,
+                role: userIndex.role,
+            },
+            process.env.JWT_SECRET,
+            { expiresIn: process.env.JWT_EXPIRES_IN }
+        );
+
+        // Step 7: Return success response with userId and userName
+        console.log('Login successful!');
         res.status(200).json({
             status: 'success',
-            results: jobs.length,
-            data: { jobs },
+            message: 'Logged in successfully!',
+            role: userIndex.role,
+            userId: userDetails._id,  // User ID
+            userName: userDetails.name, // User name (adjust based on your field)
+            token,
         });
     } catch (err) {
-        console.error('❌ Error fetching jobs:', err);
+        console.error('Error during login:', err);
         res.status(500).json({
             status: 'fail',
-            message: 'Error fetching available jobs',
+            message: 'Error logging in.',
         });
     }
 };
-
-
 
 exports.getjob = async (req, res) => {
     try {

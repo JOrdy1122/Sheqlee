@@ -211,6 +211,7 @@ exports.login = async (req, res) => {
             status: 'success',
             message: 'Logged in successfully!',
             role: userIndex.role,
+            userId: userDetails._id,
             token,
         });
     } catch (err) {
