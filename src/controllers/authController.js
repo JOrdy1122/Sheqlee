@@ -105,6 +105,123 @@ exports.handleGoogleCallback = async (req, res) => {
     }
 };
 
+// exports.login = async (req, res) => {
+//     try {
+//         const { email, password } = req.body;
+//         console.log('Checking email:', email);
+
+//         // Step 1: Find the user in the UserIndex
+//         const userIndex = await UserIndex.findOne({
+//             email: email.toLowerCase(),
+//         });
+
+//         if (!userIndex) {
+//             console.log(' No user found in UserIndex!');
+//             return res.status(404).json({
+//                 status: 'fail',
+//                 message: 'User not found.',
+//             });
+//         }
+//         // Step 2: Determine the correct model name
+//         const modelName =
+//             userIndex.role === 'Freelancer'
+//                 ? 'Freelancer'
+//                 : userIndex.role === 'Company'
+//                   ? 'Company'
+//                   : userIndex.role === 'User'
+//                     ? 'User'
+//                     : null;
+
+//         if (!modelName) {
+//             console.log('Invalid user role!');
+//             return res.status(400).json({
+//                 status: 'fail',
+//                 message: 'Invalid user role.',
+//             });
+//         }
+
+//         // Step 3: Populate user details using correct model
+//         const userDetails = await mongoose
+//             .model(modelName)
+//             .findById(userIndex.userId)
+//             .select('+password'); // Force Mongoose to return the password
+
+//         if (!userDetails) {
+//             console.log(
+//                 'User details missing in database!'
+//             );
+//             return res.status(404).json({
+//                 status: 'fail',
+//                 message: 'User details not found.',
+//             });
+//         }
+//         // Step 4: Check if action is inactive → Block login
+//         if (userDetails.action === 'inactive') {
+//             console.log(
+//                 'Login blocked: Freelancer is inactive!'
+//             );
+//             return res.status(403).json({
+//                 status: 'fail',
+//                 message:
+//                     'Your account is inactive. Contact support for assistance.',
+//             });
+//         }
+//         // Check for pending deletion request
+//         const deletionRequest =
+//             await DeletionRequest.findOne({
+//                 account_Id: userDetails._id,
+//             });
+//         if (deletionRequest) {
+//             await DeletionRequest.deleteOne({
+//                 account_Id: userDetails._id,
+//             }); // Cancel deletion
+//             user.status = 'active'; // Restore status
+//             await userDetails.save();
+//         }
+
+//         // Step 4: Validate the password
+//         console.log('Checking password...');
+//         const isPasswordCorrect = await bcrypt.compare(
+//             password,
+//             userDetails.password
+//         );
+
+//         if (!isPasswordCorrect) {
+//             console.log(' Incorrect password attempt!');
+//             return res.status(401).json({
+//                 status: 'fail',
+//                 message: 'Incorrect password.',
+//             });
+//         }
+
+//         // Step 5: Generate JWT token
+//         console.log('Generating token...');
+//         const token = jwt.sign(
+//             {
+//                 userId: userDetails._id,
+//                 role: userIndex.role,
+//             },
+//             process.env.JWT_SECRET,
+//             { expiresIn: process.env.JWT_EXPIRES_IN }
+//         );
+
+//         // Step 6: Return success response
+//         console.log(' Login successful!');
+//         res.status(200).json({
+//             status: 'success',
+//             message: 'Logged in successfully!',
+//             role: userIndex.role,
+//             userId: userDetails._id,
+//             token,
+//         });
+//     } catch (err) {
+//         console.error(' Error during login:', err);
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error logging in.',
+//         });
+//     }
+// };
 exports.login = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -116,21 +233,22 @@ exports.login = async (req, res) => {
         });
 
         if (!userIndex) {
-            console.log(' No user found in UserIndex!');
+            console.log('No user found in UserIndex!');
             return res.status(404).json({
                 status: 'fail',
                 message: 'User not found.',
             });
         }
+
         // Step 2: Determine the correct model name
         const modelName =
             userIndex.role === 'Freelancer'
                 ? 'Freelancer'
                 : userIndex.role === 'Company'
-                  ? 'Company'
-                  : userIndex.role === 'User'
-                    ? 'User'
-                    : null;
+                ? 'Company'
+                : userIndex.role === 'User'
+                ? 'User'
+                : null;
 
         if (!modelName) {
             console.log('Invalid user role!');
@@ -147,39 +265,35 @@ exports.login = async (req, res) => {
             .select('+password'); // Force Mongoose to return the password
 
         if (!userDetails) {
-            console.log(
-                'User details missing in database!'
-            );
+            console.log('User details missing in database!');
             return res.status(404).json({
                 status: 'fail',
                 message: 'User details not found.',
             });
         }
+
         // Step 4: Check if action is inactive → Block login
         if (userDetails.action === 'inactive') {
-            console.log(
-                'Login blocked: Freelancer is inactive!'
-            );
+            console.log('Login blocked: User is inactive!');
             return res.status(403).json({
                 status: 'fail',
-                message:
-                    'Your account is inactive. Contact support for assistance.',
+                message: 'Your account is inactive. Contact support for assistance.',
             });
         }
+
         // Check for pending deletion request
-        const deletionRequest =
-            await DeletionRequest.findOne({
-                account_Id: userDetails._id,
-            });
+        const deletionRequest = await DeletionRequest.findOne({
+            account_Id: userDetails._id,
+        });
         if (deletionRequest) {
             await DeletionRequest.deleteOne({
                 account_Id: userDetails._id,
             }); // Cancel deletion
-            user.status = 'active'; // Restore status
+            userDetails.status = 'active'; // Restore status
             await userDetails.save();
         }
 
-        // Step 4: Validate the password
+        // Step 5: Validate the password
         console.log('Checking password...');
         const isPasswordCorrect = await bcrypt.compare(
             password,
@@ -187,14 +301,14 @@ exports.login = async (req, res) => {
         );
 
         if (!isPasswordCorrect) {
-            console.log(' Incorrect password attempt!');
+            console.log('Incorrect password attempt!');
             return res.status(401).json({
                 status: 'fail',
                 message: 'Incorrect password.',
             });
         }
 
-        // Step 5: Generate JWT token
+        // Step 6: Generate JWT token
         console.log('Generating token...');
         const token = jwt.sign(
             {
@@ -205,17 +319,18 @@ exports.login = async (req, res) => {
             { expiresIn: process.env.JWT_EXPIRES_IN }
         );
 
-        // Step 6: Return success response
-        console.log(' Login successful!');
+        // Step 7: Return success response with userId and userName
+        console.log('Login successful!');
         res.status(200).json({
             status: 'success',
             message: 'Logged in successfully!',
             role: userIndex.role,
-            userId: userDetails._id,
+            userId: userDetails._id,  // User ID
+            userName: userDetails.name, // User name (adjust based on your field)
             token,
         });
     } catch (err) {
-        console.error(' Error during login:', err);
+        console.error('Error during login:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error logging in.',
