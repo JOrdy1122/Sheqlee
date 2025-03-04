@@ -35,16 +35,42 @@ const upload = multer({
     },
 });
 
+// const processImage = async (req, res, next) => {
+//     if (!req.file) return next();
+
+//     const ext = 'jpeg'; // Standardize image format
+//     const entityPrefix = req.user
+//         ? `user-${req.user.userId}`
+//         : `file`;
+
+//     const filename = `${entityPrefix}-${Date.now()}.${ext}`;
+//     req.file.filename = filename;
+
+//     const outputPath = path.join(
+//         __dirname,
+//         '../uploads/profile_pictures',
+//         filename
+//     );
+
+//     // ✅ Resize, Convert, & Save Image using sharp
+//     await sharp(req.file.buffer)
+//         .resize(250, 250) // Resize to 250x250
+//         .toFormat(ext)
+//         .jpeg({ quality: 80 }) // Convert & compress
+//         .toFile(outputPath);
+
+//     req.file.path = `/uploads/profile_pictures/${filename}`; // Store path for DB
+//     next();
+// };
+
 const processImage = async (req, res, next) => {
     if (!req.file) return next();
 
     const ext = 'jpeg'; // Standardize image format
-    const entityPrefix = req.user
-        ? `user-${req.user.userId}`
-        : `file`;
+    const entityPrefix = req.user ? `user-${req.user.userId}` : `file`;
 
     const filename = `${entityPrefix}-${Date.now()}.${ext}`;
-    req.file.filename = filename;
+    req.file.filename = filename;  // ✅ Correctly assign the filename
 
     const outputPath = path.join(
         __dirname,
@@ -52,15 +78,25 @@ const processImage = async (req, res, next) => {
         filename
     );
 
-    // ✅ Resize, Convert, & Save Image using sharp
-    await sharp(req.file.buffer)
-        .resize(250, 250) // Resize to 250x250
-        .toFormat(ext)
-        .jpeg({ quality: 80 }) // Convert & compress
-        .toFile(outputPath);
+    try {
+        // ✅ Resize, Convert, & Save Image using sharp
+        await sharp(req.file.buffer)
+            .resize(250, 250)
+            .toFormat(ext)
+            .jpeg({ quality: 80 }) // Convert & compress
+            .toFile(outputPath);
 
-    req.file.path = `/uploads/profile_pictures/${filename}`; // Store path for DB
-    next();
+        // ✅ Store correct path in `req.file`
+        req.file.path = `/uploads/profile_pictures/${filename}`; 
+
+        // ✅ Assign correct file path to DB field
+        req.body.image = req.file.path;  
+
+        next();
+    } catch (error) {
+        console.error('Error processing image:', error);
+        return res.status(500).json({ message: 'Image processing failed!' });
+    }
 };
 
 module.exports = { upload, processImage };
