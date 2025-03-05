@@ -497,8 +497,8 @@ exports.resetPassword = async (req, res) => {
 };
 exports.toggleCompanySubscription = async (req, res) => {
     try {
-        const { userId } = req.user; 
-        const { companyId } = req.body; 
+        const { userId } = req.user; // Extract the logged-in freelancer's ID
+        const { companyId } = req.body; // Get the company ID from request body
 
         if (!companyId) {
             return res.status(400).json({
@@ -507,11 +507,8 @@ exports.toggleCompanySubscription = async (req, res) => {
             });
         }
 
-        // Find freelancer
-        const freelancer = await Freelancer.findById(userId)
-            .populate('subscribedCompanies')  // Populate subscribed companies
-            .populate('subscribedCategories')  // Populate subscribed categories
-            .populate('subscribedTags');       // Populate subscribed tags;
+        // Find the freelancer
+        const freelancer = await Freelancer.findById(userId);
         if (!freelancer) {
             return res.status(404).json({
                 status: 'fail',
@@ -519,8 +516,10 @@ exports.toggleCompanySubscription = async (req, res) => {
             });
         }
 
-        // Convert subscribedCompanies to a Set for toggle logic
-        const subscribedCompaniesSet = new Set(freelancer.subscribedCompanies.map(id => id.toString()));
+        // Toggle the company subscription
+        const subscribedCompaniesSet = new Set(
+            freelancer.subscribedCompanies.map((id) => id.toString())
+        );
 
         if (subscribedCompaniesSet.has(companyId)) {
             subscribedCompaniesSet.delete(companyId); // Unsubscribe
@@ -528,19 +527,26 @@ exports.toggleCompanySubscription = async (req, res) => {
             subscribedCompaniesSet.add(companyId); // Subscribe
         }
 
-        // Update freelancer with the new list of subscribed companies
-        freelancer.subscribedCompanies = Array.from(subscribedCompaniesSet);
-        await freelancer.save();
+        // Update freelancer subscriptions
+        const updatedFreelancer = await Freelancer.findByIdAndUpdate(
+            userId,
+            {
+                subscribedCompanies: Array.from(subscribedCompaniesSet),
+            },
+            { new: true, runValidators: false }
+        );
 
         res.status(200).json({
             status: 'success',
-            message: subscribedCompaniesSet.has(companyId)
-                ? 'Successfully subscribed to company!'
-                : 'Successfully unsubscribed from company!',
-            data: freelancer.subscribedCompanies,
+            message: `Successfully ${
+                subscribedCompaniesSet.has(companyId)
+                    ? 'subscribed to'
+                    : 'unsubscribed from'
+            } company!`,
+            data: updatedFreelancer.subscribedCompanies,
         });
-    } catch (error) {
-        console.error('Error toggling company subscription:', error);
+    } catch (err) {
+        console.error('Error toggling company subscription:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error toggling company subscription!',
