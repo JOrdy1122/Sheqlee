@@ -5,6 +5,69 @@ const crypto = require('crypto');
 const Jobs = require('../models/jobModel');
 const ApiFeatures = require('../utils/apiFeatures');
 
+
+exports.getFreelancerDashboard = async (req, res) => {
+    try {
+        const { userId } = req.user;
+
+        // Fetch the freelancer with subscriptions populated
+        const freelancer = await Freelancer.findById(userId).populate([
+            'subscribedCategories',
+            'subscribedTags',
+            'subscribedCompanies'
+        ]);
+
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        // Get subscription IDs
+        const categoryIds = freelancer.subscribedCategories.map(cat => cat._id);
+        const tagIds = freelancer.subscribedTags.map(tag => tag._id);
+        const companyIds = freelancer.subscribedCompanies.map(comp => comp._id);
+
+        // Find jobs that match any of the subscriptions
+        const jobs = await Jobs.find({
+            $or: [
+                { category: { $in: categoryIds } },
+                { tags: { $in: tagIds } },
+                { company: { $in: companyIds } }
+            ]
+        }).populate('company', 'name') // Populate company name
+        .populate('tags', 'name');  // Populate tag names
+
+        // Enhance job data: Check applied & favorite jobs
+        const enrichedJobs = jobs.map(job => ({
+            ...job.toObject(),
+            isApplied: freelancer.appliedJobs.includes(job._id),
+            isFavorite: freelancer.favorites.includes(job._id),
+        }));
+
+        res.status(200).json({
+            status: 'success',
+            totalJobs: enrichedJobs.length,
+            data: {
+                jobs: enrichedJobs,
+                subscriptions: {
+                    categories: freelancer.subscribedCategories,
+                    tags: freelancer.subscribedTags,
+                    companies: freelancer.subscribedCompanies
+                }
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching freelancer dashboard:', err);
+        res.status(500).json({
+            status: 'fail',
+            message: 'Error fetching freelancer dashboard!',
+        });
+    }
+};
+
+
 exports.toggleTagSubscription = async (req, res) => {
     try {
         const { userId } = req.user; 
@@ -431,75 +494,56 @@ exports.resetPassword = async (req, res) => {
         });
     }
 };
-
-exports.subscribeToCompany = async (req, res) => {
+exports.toggleCompanySubscription = async (req, res) => {
     try {
-        const { freelancerId, companyId } = req.body;
+        const { userId } = req.user; 
+        const { companyId } = req.body; 
 
-        // Find the freelancer and update subscriptions
-        const freelancer =
-            await Freelancer.findByIdAndUpdate(
-                freelancerId,
-                {
-                    $addToSet: {
-                        subscribedCompanies: companyId,
-                    },
-                }, // Prevents duplicates
-                { new: true, runValidators: true }
-            );
-
-        if (!freelancer) {
-            return res
-                .status(404)
-                .json({ message: 'Freelancer not found' });
+        if (!companyId) {
+            return res.status(400).json({
+                status: 'fail',
+                message: 'Company ID is required!',
+            });
         }
 
+        // Find freelancer
+        const freelancer = await Freelancer.findById(userId);
+        if (!freelancer) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Freelancer not found!',
+            });
+        }
+
+        // Convert subscribedCompanies to a Set for toggle logic
+        const subscribedCompaniesSet = new Set(freelancer.subscribedCompanies.map(id => id.toString()));
+
+        if (subscribedCompaniesSet.has(companyId)) {
+            subscribedCompaniesSet.delete(companyId); // Unsubscribe
+        } else {
+            subscribedCompaniesSet.add(companyId); // Subscribe
+        }
+
+        // Update freelancer with the new list of subscribed companies
+        freelancer.subscribedCompanies = Array.from(subscribedCompaniesSet);
+        await freelancer.save();
+
         res.status(200).json({
-            message: 'Successfully subscribed to company!',
+            status: 'success',
+            message: subscribedCompaniesSet.has(companyId)
+                ? 'Successfully subscribed to company!'
+                : 'Successfully unsubscribed from company!',
             data: freelancer.subscribedCompanies,
         });
     } catch (error) {
+        console.error('Error toggling company subscription:', error);
         res.status(500).json({
-            message: 'Error subscribing to company',
-            error,
+            status: 'fail',
+            message: 'Error toggling company subscription!',
         });
     }
 };
 
-exports.unsubscribeFromCompany = async (req, res) => {
-    try {
-        const { freelancerId, companyId } = req.body;
-
-        // Remove company from subscriptions
-        const freelancer =
-            await Freelancer.findByIdAndUpdate(
-                freelancerId,
-                {
-                    $pull: {
-                        subscribedCompanies: companyId,
-                    },
-                }, // Removes the company ID
-                { new: true, runValidators: true }
-            );
-
-        if (!freelancer) {
-            return res
-                .status(404)
-                .json({ message: 'Freelancer not found' });
-        }
-
-        res.status(200).json({
-            message:
-                'Successfully unsubscribed from company!',
-            data: freelancer.subscribedCompanies,
-        });
-    } catch (error) {
-        res.status(500).json({
-            message: 'Error unsubscribing from company',
-            error,
-        });
-    }
-};
 
 exports.getAllFreelancers = async (req, res) => {
     try {

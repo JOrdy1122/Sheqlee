@@ -14,8 +14,6 @@ const {
     getFreelancer,
     updateFreelancer,
     deleteFreelancer,
-    subscribeToCompany,
-    unsubscribeFromCompany,
     forgotPassword,
     resetPassword,
     toggleFavoriteJob,
@@ -25,6 +23,8 @@ const {
     toggleCategorySubscription,
     toggleTagSubscription,
     toggleFreelancerAction,
+    getFreelancerDashboard,
+    toggleCompanySubscription
 } = freelancerController;
 
 const {
@@ -63,6 +63,8 @@ router.patch('/favorites', protect, toggleFavoriteJob);
 // ✅ Get Favorite Jobs List
 router.get('/favorites', protect, getFavoriteJobs);
 
+router.get('/dashboard', protect,getFreelancerDashboard);
+
 // for applying job posts
 router.get('/apply', protect, getAppliedJobs);
 router.patch('/apply', protect, toggleApplyJob);
@@ -80,13 +82,7 @@ router.patch(
 router.post('/forgotPassword', forgotPassword);
 router.patch('/resetPassword', resetPassword);
 
-// for subscription
-router.post('/subscribeToCompany',protect, subscribeToCompany);
-router.delete(
-    '/unsubscribeFromCompany',
-    protect,
-    unsubscribeFromCompany
-);
+router.patch('/subscribe/company', protect, toggleCompanySubscription);
 
 router.patch(
     '/subscribe/tag',

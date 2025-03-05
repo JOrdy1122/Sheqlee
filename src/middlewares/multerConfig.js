@@ -64,13 +64,18 @@ const upload = multer({
 // };
 
 const processImage = async (req, res, next) => {
-    if (!req.file) return next();
+    if (!req.file) {
+        console.log("No file received!");
+        return next();
+    }
+
+    console.log("Received file:", req.file);
 
     const ext = 'jpeg'; // Standardize image format
     const entityPrefix = req.user ? `user-${req.user.userId}` : `file`;
 
     const filename = `${entityPrefix}-${Date.now()}.${ext}`;
-    req.file.filename = filename;  // ✅ Correctly assign the filename
+    req.file.filename = filename; // ✅ Assign a filename
 
     const outputPath = path.join(
         __dirname,
@@ -87,15 +92,17 @@ const processImage = async (req, res, next) => {
             .toFile(outputPath);
 
         // ✅ Store correct path in `req.file`
-        req.file.path = `/uploads/profile_pictures/${filename}`; 
+        req.file.path = `/uploads/profile_pictures/${filename}`;  
+
+        console.log("Processed image path:", req.file.path);
 
         // ✅ Assign correct file path to DB field
-        req.body.image = req.file.path;  
+        req.body.image = req.file.path;
 
         next();
     } catch (error) {
-        console.error('Error processing image:', error);
-        return res.status(500).json({ message: 'Image processing failed!' });
+        console.error("Error processing image:", error);
+        return res.status(500).json({ message: "Image processing failed!" });
     }
 };
 
