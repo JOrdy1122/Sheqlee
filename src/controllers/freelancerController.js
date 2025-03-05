@@ -31,13 +31,14 @@ exports.getFreelancerDashboard = async (req, res) => {
 
         // Find jobs that match any of the subscriptions
         const jobs = await Jobs.find({
-            $or: [
-                { category: { $in: categoryIds } },
-                { tags: { $in: tagIds } },
-                { company: { $in: companyIds } }
-            ]
-        }).populate('company', 'name') // Populate company name
-        .populate('tags', 'name');  // Populate tag names
+        $or: [
+            { category: { $in: categoryIds } },
+            { 'skills._id': { $in: tagIds } },  // Look in the 'skills' field instead of 'tags'
+            { company: { $in: companyIds } }
+        ]
+        }).populate('company', 'name')
+        .populate('skills', 'title');
+
 
         // Enhance job data: Check applied & favorite jobs
         const enrichedJobs = jobs.map(job => ({
