@@ -507,7 +507,10 @@ exports.toggleCompanySubscription = async (req, res) => {
         }
 
         // Find freelancer
-        const freelancer = await Freelancer.findById(userId);
+        const freelancer = await Freelancer.findById(userId)
+            .populate('subscribedCompanies')  // Populate subscribed companies
+            .populate('subscribedCategories')  // Populate subscribed categories
+            .populate('subscribedTags');       // Populate subscribed tags;
         if (!freelancer) {
             return res.status(404).json({
                 status: 'fail',
