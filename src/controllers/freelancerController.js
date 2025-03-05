@@ -558,7 +558,12 @@ exports.getAllFreelancers = async (req, res) => {
             .search(['name', 'email']) // Search by name or email
             .paginate(); // Apply pagination (12 per page)
 
-        const freelancers = await apiFeatures.query.select('-__v');
+        // Populate references for subscribed companies, categories, and tags
+        const freelancers = await apiFeatures.query
+            .select('-__v')
+            .populate('subscribedCompanies')  // Populate subscribed companies
+            .populate('subscribedCategories')  // Populate subscribed categories
+            .populate('subscribedTags');       // Populate subscribed tags
 
         res.status(200).json({
             status: 'success',
