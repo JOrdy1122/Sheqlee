@@ -33,7 +33,7 @@ exports.getFreelancerDashboard = async (req, res) => {
         const jobs = await Jobs.find({
         $or: [
             { category: { $in: categoryIds } },
-            { skills: { $in: tagIds } },  // Look in the 'skills' field instead of 'tags'
+            { skills: { $in: tagIds } },  
             { company: { $in: companyIds } }
         ]
         }).populate('company', 'name')
