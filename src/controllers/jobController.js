@@ -340,11 +340,19 @@ exports.getAvailableJobs = async (req, res) => {
             .select('-__v');
 
         console.log('✅ Jobs Found:', jobs.length);
+         // **Format timestamps just like `getLatestJobs`**
+        const formattedJobs = jobs.map((job) => {
+            const jobObj = job.toObject();
+            return {
+                ...jobObj,
+                timeAgo: moment(job.createdAt).fromNow(), // Format timestamp
+            };
+        });
 
         res.status(200).json({
             status: 'success',
-            results: jobs.length,
-            data: { jobs },
+            results: formattedJobs.length,
+            data: { jobs: formattedJobs }, // Send formatted jobs
         });
     } catch (err) {
         console.error('❌ Error fetching jobs:', err);
