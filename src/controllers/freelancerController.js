@@ -198,6 +198,61 @@ exports.toggleCategorySubscription = async (req, res) => {
     }
 };
 
+// exports.toggleApplyJob = async (req, res) => {
+//     try {
+//         const { userId } = req.user;
+//         const { jobId } = req.body;
+
+//         if (!jobId) {
+//             return res.status(400).json({
+//                 status: 'fail',
+//                 message: 'Job ID is required!',
+//             });
+//         }
+
+//         // Find the freelancer
+//         const freelancer =
+//             await Freelancer.findById(userId);
+//         if (!freelancer) {
+//             return res.status(404).json({
+//                 status: 'fail',
+//                 message: 'Freelancer not found!',
+//             });
+//         }
+
+//         // Check if the job is already applied for
+//         const isApplied =
+//             freelancer.appliedJobs.includes(jobId);
+
+//         // Update appliedJobs using $pull or $addToSet
+//         const updatedFreelancer =
+//             await Freelancer.findByIdAndUpdate(
+//                 userId,
+//                 isApplied
+//                     ? { $pull: { appliedJobs: jobId } } // Remove from applied jobs
+//                     : { $addToSet: { appliedJobs: jobId } }, // Add to applied jobs if not already present
+//                 { new: true, runValidators: false } // Prevents validation errors like `passwordConfirm`
+//             );
+
+//         res.status(200).json({
+//             status: 'success',
+//             message: isApplied
+//                 ? 'Job application canceled!'
+//                 : 'Job successfully applied!',
+//             appliedJobs: updatedFreelancer.appliedJobs, // Return updated applied jobs
+//         });
+//     } catch (err) {
+//         console.error(
+//             ' Error updating applied jobs:',
+//             err
+//         );
+//         res.status(500).json({
+//             status: 'fail',
+//             message: 'Error updating applied jobs!',
+//         });
+//     }
+// };
+
 exports.toggleApplyJob = async (req, res) => {
     try {
         const { userId } = req.user;
@@ -211,8 +266,7 @@ exports.toggleApplyJob = async (req, res) => {
         }
 
         // Find the freelancer
-        const freelancer =
-            await Freelancer.findById(userId);
+        const freelancer = await Freelancer.findById(userId);
         if (!freelancer) {
             return res.status(404).json({
                 status: 'fail',
@@ -220,38 +274,58 @@ exports.toggleApplyJob = async (req, res) => {
             });
         }
 
-        // Check if the job is already applied for
-        const isApplied =
-            freelancer.appliedJobs.includes(jobId);
+        // Find the job
+        const job = await Job.findById(jobId);
+        if (!job) {
+            return res.status(404).json({
+                status: 'fail',
+                message: 'Job not found!',
+            });
+        }
 
-        // Update appliedJobs using $pull or $addToSet
-        const updatedFreelancer =
-            await Freelancer.findByIdAndUpdate(
-                userId,
-                isApplied
-                    ? { $pull: { appliedJobs: jobId } } // Remove from applied jobs
-                    : { $addToSet: { appliedJobs: jobId } }, // Add to applied jobs if not already present
-                { new: true, runValidators: false } // Prevents validation errors like `passwordConfirm`
-            );
+        // Check if the freelancer already applied
+        const isApplied = freelancer.appliedJobs.includes(jobId);
 
-        res.status(200).json({
-            status: 'success',
-            message: isApplied
-                ? 'Job application canceled!'
-                : 'Job successfully applied!',
-            appliedJobs: updatedFreelancer.appliedJobs, // Return updated applied jobs
-        });
+        if (isApplied) {
+            // Remove job from freelancer's applied jobs
+            await Freelancer.findByIdAndUpdate(userId, {
+                $pull: { appliedJobs: jobId },
+            });
+
+            // Remove freelancer from job's applied freelancers
+            await Job.findByIdAndUpdate(jobId, {
+                $pull: { appliedFreelancers: userId },
+            });
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Job application canceled!',
+            });
+        } else {
+            // Add job to freelancer's applied jobs
+            await Freelancer.findByIdAndUpdate(userId, {
+                $addToSet: { appliedJobs: jobId },
+            });
+
+            // Add freelancer to job's applied freelancers
+            await Job.findByIdAndUpdate(jobId, {
+                $addToSet: { appliedFreelancers: userId },
+            });
+
+            return res.status(200).json({
+                status: 'success',
+                message: 'Job successfully applied!',
+            });
+        }
     } catch (err) {
-        console.error(
-            ' Error updating applied jobs:',
-            err
-        );
+        console.error('❌ Error updating applied jobs:', err);
         res.status(500).json({
             status: 'fail',
             message: 'Error updating applied jobs!',
         });
     }
 };
+
 
 exports.getAppliedJobs = async (req, res) => {
     try {
