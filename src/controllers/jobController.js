@@ -336,7 +336,8 @@ exports.getAvailableJobs = async (req, res) => {
         const jobs = await features.query
             .populate('category', 'title')
             .populate('skills', 'title')
-            .populate('company', 'companyName')
+            .populate('company', 'companyName'),
+            .populate('appliedFreelancers', 'name')
             .select('-__v');
 
         console.log('✅ Jobs Found:', jobs.length);
