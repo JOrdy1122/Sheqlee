@@ -2,7 +2,7 @@ const Freelancer = require('./../models/freelancerModel');
 const sendEmail = require('../utils/email');
 const jwt = require('jsonwebtoken');
 const crypto = require('crypto');
-const Jobs = require('../models/jobModel');
+const Job = require('../models/jobModel');
 const ApiFeatures = require('../utils/apiFeatures');
 
 
